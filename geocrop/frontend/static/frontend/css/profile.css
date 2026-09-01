@@ -1,0 +1,112 @@
+/* ---------- Profile page ---------- */
+
+.profile-wrap {
+    max-width: 620px;
+    margin: 0 auto 4rem;
+    padding: 0 2rem;
+}
+
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.6rem 1.8rem;
+    box-shadow: 0 3px 10px rgba(23, 57, 44, 0.07);
+    margin-bottom: 1.5rem;
+}
+
+.profile-avatar {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--geocrop-green);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #17392c;
+}
+
+.profile-email {
+    font-size: 0.9rem;
+    color: #5a6b5a;
+    margin-top: 0.15rem;
+}
+
+.profile-logout {
+    flex-shrink: 0;
+    text-decoration: none;
+}
+
+.btn-secondary {
+    padding: 0.55rem 1.1rem;
+    background: #eef2ea;
+    border: 1px solid #ccd6c6;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #33402f;
+    cursor: pointer;
+    transition: background 0.18s ease;
+}
+
+.btn-secondary:hover {
+    background: #dfe8d9;
+}
+
+.activity-panel {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(23, 57, 44, 0.07);
+    overflow: hidden;
+}
+
+.activity-panel h2 {
+    font-size: 1rem;
+    color: #17392c;
+    margin: 0;
+    padding: 1.1rem 1.4rem 0.9rem;
+    border-bottom: 1px solid #eef2ea;
+}
+
+.activity-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.activity-list li {
+    padding: 0.9rem 1.4rem;
+    border-bottom: 1px solid #f4f7f1;
+}
+
+.activity-list li:last-child {
+    border-bottom: none;
+}
+
+.activity-desc {
+    font-size: 0.92rem;
+    color: #17392c;
+    font-weight: 600;
+}
+
+.activity-empty {
+    text-align: center;
+    color: #8a978a;
+    font-size: 0.9rem;
+    padding: 1.4rem !important;
+}

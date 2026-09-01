@@ -1,0 +1,88 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+{% block title %}GeoCrop - Dashboard{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'frontend/css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Aggregate crop insights across analyzed fields. Narrow down by state, region, or crop type.</p>
+</div>
+
+<div class="dashboard-wrap">
+    <div class="filter-bar">
+        <div class="filter-field">
+            <label for="filter-state">State</label>
+            <select id="filter-state">
+                <option value="">All states</option>
+                {% for s in states %}
+                <option value="{{ s }}">{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="filter-region">Region</label>
+            <select id="filter-region">
+                <option value="">All regions</option>
+                {% for r in regions %}
+                <option value="{{ r }}">{{ r }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="filter-crop">Crop type</label>
+            <select id="filter-crop">
+                <option value="">All crops</option>
+                {% for ct in crop_types %}
+                <option value="{{ ct }}">{{ ct }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="button" class="btn-secondary" id="clear-filters">Clear filters</button>
+    </div>
+
+    <div class="summary-stats">
+        <div class="stat-card">
+            <div class="stat-label">Total crop types</div>
+            <div class="stat-value" id="stat-crop-types">&mdash;</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total crop land area (acres)</div>
+            <div class="stat-value" id="stat-area">&mdash;</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Avg. yield</div>
+            <div class="stat-value" id="stat-yield">&mdash;</div>
+        </div>
+    </div>
+
+    <div class="breakdown-panel">
+        <h2>Breakdown by crop type</h2>
+        <table class="breakdown-table">
+            <thead>
+                <tr>
+                    <th>Crop</th>
+                    <th>Area (acres)</th>
+                    <th>Avg. yield</th>
+                    <th>% of total area</th>
+                </tr>
+            </thead>
+            <tbody id="breakdown-body">
+                <tr class="no-data-row"><td colspan="4">Loading&hellip;</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ crop_colors|json_script:"crop-colors-data" }}
+<script>
+    const DASHBOARD_STATS_URL = "{% url 'frontend:dashboard_stats' %}";
+    const CROP_COLORS = JSON.parse(document.getElementById('crop-colors-data').textContent);
+</script>
+<script src="{% static 'frontend/js/dashboard.js' %}"></script>
+{% endblock %}

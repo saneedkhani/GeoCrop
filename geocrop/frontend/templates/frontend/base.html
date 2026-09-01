@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GeoCrop{% endblock %}</title>
+
+    <!-- Leaflet CSS/JS (CDN, no API key required) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <link rel="stylesheet" href="{% static 'frontend/css/base.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <a href="{% url 'frontend:home' %}" class="navbar-brand">🌾 GeoCrop</a>
+        <div class="navbar-links">
+            <a href="{% url 'frontend:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a>
+            <a href="{% url 'frontend:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="{% url 'frontend:results' %}" class="{% if request.resolver_match.url_name == 'results' %}active{% endif %}">Live Mapview</a>
+            <a href="{% url 'frontend:profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">Profile</a>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>GeoCrop &mdash; satellite-based crop intelligence (prototype, dummy data)</p>
+    </footer>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,40 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+{% block title %}GeoCrop - Log In{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'frontend/css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Log In</h1>
+    <p>Log in to view your GeoCrop profile and activity.</p>
+</div>
+
+<div class="auth-wrap">
+    <form class="auth-form" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        {% if error %}
+        <div class="form-error">{{ error }}</div>
+        {% endif %}
+
+        <div class="form-field">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" value="{{ username|default:'' }}" required autofocus>
+        </div>
+        <div class="form-field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+
+        <button type="submit" class="btn-primary">Log In</button>
+    </form>
+    <p class="auth-switch">
+        Don't have an account?
+        <a href="{% url 'frontend:signup' %}{% if next %}?next={{ next }}{% endif %}">Sign up</a>
+    </p>
+</div>
+{% endblock %}

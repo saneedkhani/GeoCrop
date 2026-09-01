@@ -1,0 +1,127 @@
+/* ---------- Upload page ---------- */
+
+.upload-wrap {
+    max-width: 560px;
+    margin: 0 auto 4rem;
+    padding: 0 2rem;
+}
+
+.upload-form {
+    background: #fff;
+    border: 1px solid #e0e6dc;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 2px dashed #b7cdb2;
+    border-radius: 10px;
+    padding: 2.5rem 1.5rem;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease;
+    background: #f9fbf7;
+}
+
+.dropzone:hover,
+.dropzone.dragover {
+    border-color: var(--geocrop-green);
+    background: #f0f7ee;
+}
+
+.dropzone input[type="file"] {
+    display: none;
+}
+
+.dropzone-icon {
+    font-size: 2.4rem;
+    margin-bottom: 0.6rem;
+}
+
+.dropzone-text strong {
+    display: block;
+    color: var(--geocrop-green-dark);
+}
+
+.dropzone-text span {
+    font-size: 0.85rem;
+    color: #5a6b5a;
+}
+
+.dropzone-filename {
+    margin-top: 0.8rem;
+    font-size: 0.88rem;
+    color: var(--geocrop-green-dark);
+    font-weight: 600;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.form-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-field label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: #33402f;
+}
+
+.form-field input,
+.form-field select {
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #ccd6c6;
+    border-radius: 6px;
+    font-size: 0.92rem;
+    font-family: inherit;
+}
+
+.btn-primary {
+    display: block;
+    width: 100%;
+    margin-top: 1.8rem;
+    padding: 0.8rem;
+    background: var(--geocrop-green);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease;
+}
+
+.btn-primary:hover {
+    background: var(--geocrop-green-dark);
+}
+
+.btn-primary:disabled {
+    background: #a9c2a4;
+    cursor: not-allowed;
+}
+
+.form-error {
+    margin-top: 1rem;
+    padding: 0.7rem 1rem;
+    background: #fdecea;
+    border: 1px solid #f5c2bd;
+    color: #a1332a;
+    border-radius: 8px;
+    font-size: 0.88rem;
+}
+
+@media (max-width: 480px) {
+    .form-row { flex-direction: column; }
+}

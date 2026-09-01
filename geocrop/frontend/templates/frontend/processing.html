@@ -1,0 +1,80 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+{% block title %}GeoCrop - Processing{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'frontend/css/processing.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Analyzing Your Field</h1>
+    <p>Sit tight &mdash; GeoCrop is running your satellite image through the pipeline.</p>
+</div>
+
+<div class="processing-wrap">
+    {% if upload_filename %}
+    <div class="processing-file">Analyzing <strong>{{ upload_filename }}</strong></div>
+    {% endif %}
+
+    <ul class="step-list" id="step-list">
+        <li class="step-item" data-step="0">
+            <span class="step-marker"><span class="num">1</span></span>
+            <span>Uploading imagery</span>
+        </li>
+        <li class="step-item" data-step="1">
+            <span class="step-marker"><span class="num">2</span></span>
+            <span>Preprocessing image</span>
+        </li>
+        <li class="step-item" data-step="2">
+            <span class="step-marker"><span class="num">3</span></span>
+            <span>Detecting fields</span>
+        </li>
+        <li class="step-item" data-step="3">
+            <span class="step-marker"><span class="num">4</span></span>
+            <span>Classifying crops</span>
+        </li>
+        <li class="step-item" data-step="4">
+            <span class="step-marker"><span class="num">5</span></span>
+            <span>Estimating yield</span>
+        </li>
+    </ul>
+
+    <div class="processing-hint">This is a prototype &mdash; results are simulated with dummy data.</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const steps = document.querySelectorAll('.step-item');
+    const stepDurationMs = 900;
+    let current = 0;
+
+    function markStep(index) {
+        steps.forEach((el, i) => {
+            el.classList.remove('active', 'done');
+            if (i < index) {
+                el.classList.add('done');
+                el.querySelector('.step-marker').innerHTML = '&#10003;';
+            } else if (i === index) {
+                el.classList.add('active');
+                el.querySelector('.step-marker').innerHTML = '<span class="spinner"></span>';
+            }
+        });
+    }
+
+    function advance() {
+        markStep(current);
+        current += 1;
+        if (current < steps.length) {
+            setTimeout(advance, stepDurationMs);
+        } else {
+            setTimeout(() => {
+                window.location.href = "{% url 'frontend:results' %}";
+            }, stepDurationMs);
+        }
+    }
+
+    advance();
+</script>
+{% endblock %}

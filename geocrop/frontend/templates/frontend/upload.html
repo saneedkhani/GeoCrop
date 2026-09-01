@@ -1,0 +1,98 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+{% block title %}GeoCrop - Analyze Satellite Data{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'frontend/css/upload.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Analyze Satellite Data</h1>
+    <p>Upload a satellite image of your field. GeoCrop will detect field boundaries,
+       classify the crop, and estimate yield.</p>
+</div>
+
+<div class="upload-wrap">
+    <form class="upload-form" method="post" enctype="multipart/form-data" id="upload-form">
+        {% csrf_token %}
+
+        <label class="dropzone" id="dropzone" for="satellite_image">
+            <input type="file" id="satellite_image" name="satellite_image" accept="image/*,.tif,.tiff">
+            <div class="dropzone-icon">🛰️</div>
+            <div class="dropzone-text">
+                <strong>Click to upload or drag and drop</strong>
+                <span>Satellite imagery &mdash; JPG, PNG, TIFF</span>
+            </div>
+            <div class="dropzone-filename" id="dropzone-filename"></div>
+        </label>
+
+        <div class="form-row">
+            <div class="form-field">
+                <label for="location">Location (optional)</label>
+                <input type="text" id="location" name="location" placeholder="e.g. Story County, Iowa">
+            </div>
+            <div class="form-field">
+                <label for="capture_date">Capture date (optional)</label>
+                <input type="date" id="capture_date" name="capture_date">
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="form-error">{{ error }}</div>
+        {% else %}
+        <div class="form-error" id="form-error" style="display: none;">
+            Please select a satellite image before analyzing.
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn-primary" id="analyze-btn">Analyze</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const fileInput = document.getElementById('satellite_image');
+    const dropzone = document.getElementById('dropzone');
+    const filenameEl = document.getElementById('dropzone-filename');
+    const form = document.getElementById('upload-form');
+    const errorEl = document.getElementById('form-error');
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+            filenameEl.textContent = 'Selected: ' + fileInput.files[0].name;
+            if (errorEl) errorEl.style.display = 'none';
+        }
+    });
+
+    ['dragover', 'dragenter'].forEach(evt => {
+        dropzone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+        dropzone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+        });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            filenameEl.textContent = 'Selected: ' + e.dataTransfer.files[0].name;
+            if (errorEl) errorEl.style.display = 'none';
+        }
+    });
+
+    form.addEventListener('submit', (e) => {
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            if (errorEl) errorEl.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}

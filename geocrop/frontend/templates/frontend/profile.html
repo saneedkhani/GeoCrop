@@ -1,0 +1,41 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+{% block title %}GeoCrop - Profile{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'frontend/css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Profile</h1>
+    <p>Your GeoCrop account details and recent activity.</p>
+</div>
+
+<div class="profile-wrap">
+    <div class="profile-card">
+        <div class="profile-avatar">{{ request.user.username|slice:":1"|upper }}</div>
+        <div class="profile-info">
+            <div class="profile-name">{{ request.user.username }}</div>
+            <div class="profile-email">{{ request.user.email }}</div>
+        </div>
+        <a href="{% url 'frontend:logout' %}" class="btn-secondary profile-logout">Log out</a>
+    </div>
+
+    <div class="activity-panel">
+        <h2>Satellite Data Records</h2>
+        <ul class="activity-list">
+            {% for a in activities %}
+            <li>
+                <div class="activity-desc">{{ a.description }}</div>
+                <div class="activity-detail">{{ a.detail }}</div>
+            </li>
+            {% empty %}
+            <li class="activity-empty">
+                No records yet &mdash; upload satellite data to see it here.
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

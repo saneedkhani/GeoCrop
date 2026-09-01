@@ -1,0 +1,48 @@
+{% extends "frontend/base.html" %}
+{% block title %}GeoCrop - Home{% endblock %}
+
+{% load static %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'frontend/css/home.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <h1>Welcome to <span class="brand-highlight">GeoCrop</span></h1>
+        <p class="hero-tagline">Satellite-powered crop intelligence, mapped in real time.</p>
+    </div>
+    <div class="hero-grow">
+        <span>🌱</span><span>🌾</span><span>🌽</span><span>🌾</span><span>🌱</span>
+    </div>
+</section>
+
+<section class="intro">
+    <p>
+        GeoCrop is a satellite-based crop intelligence platform. It takes satellite imagery
+        of agricultural land and returns crop-related insights &mdash; whether the land is
+        cropland, what crop is growing, how much area it covers, and an estimated yield &mdash;
+        all visualized on an interactive map. The platform is being built and validated on
+        USA agricultural data first, with adaptation to Pakistan planned next.
+    </p>
+</section>
+
+<section class="action-grid">
+    <a href="{% url 'frontend:upload' %}" class="grid-card">
+        <div class="grid-card-icon">🛰️</div>
+        <h2>Analyze Satellite Data</h2>
+        <p>Upload satellite imagery and let the model detect fields, classify crops, and estimate yield.</p>
+    </a>
+    <a href="{% url 'frontend:results' %}" class="grid-card">
+        <div class="grid-card-icon">🗺️</div>
+        <h2>Live Map View</h2>
+        <p>Explore already-analyzed fields on an interactive map with crop details and filters.</p>
+    </a>
+    <a href="{% url 'frontend:dashboard' %}" class="grid-card">
+        <div class="grid-card-icon">📊</div>
+        <h2>Dashboard View</h2>
+        <p>Explore all analyzed fields on state level with crop details.</p>
+    </a>
+</section>
+{% endblock %}

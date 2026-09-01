@@ -1,0 +1,85 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+{% block title %}GeoCrop - Live Map View{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'frontend/css/results.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Live Map View</h1>
+    <p>Explore analyzed fields on the map. Filter by country, state, or crop type.</p>
+</div>
+
+<div class="results-wrap">
+    <div class="filter-bar">
+        <div class="filter-field">
+            <label for="filter-country">Country</label>
+            <select id="filter-country">
+                <option value="">All countries</option>
+                {% for c in countries %}
+                <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="filter-state">State</label>
+            <select id="filter-state">
+                <option value="">All states</option>
+                {% for s in states %}
+                <option value="{{ s }}">{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="filter-crop">Crop type</label>
+            <select id="filter-crop">
+                <option value="">All crops</option>
+                {% for ct in crop_types %}
+                <option value="{{ ct }}">{{ ct }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="button" class="btn-secondary" id="clear-filters">Clear filters</button>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-label">Fields shown</div>
+            <div class="stat-value" id="stat-fields">&mdash;</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Crop types</div>
+            <div class="stat-value" id="stat-crop-types">&mdash;</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total area (acres)</div>
+            <div class="stat-value" id="stat-area">&mdash;</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Avg. yield</div>
+            <div class="stat-value" id="stat-yield">&mdash;</div>
+        </div>
+    </div>
+
+    <div class="map-row">
+        <div class="map-legend" id="map-legend">
+            <div class="legend-title">Crop Types</div>
+        </div>
+        <div class="map-container">
+                <div id="map"></div>
+        </div>
+    </div>
+    <div class="no-results" id="no-results">No fields match the selected filters.</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ crop_colors|json_script:"crop-colors-data" }}
+<script>
+    const FIELD_DATA_URL = "{% url 'frontend:field_data' %}";
+    const CROP_COLORS = JSON.parse(document.getElementById('crop-colors-data').textContent);
+</script>
+<script src="{% static 'frontend/js/map.js' %}"></script>
+{% endblock %}

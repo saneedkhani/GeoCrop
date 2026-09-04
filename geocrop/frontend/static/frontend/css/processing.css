@@ -1,96 +1,225 @@
-/* ---------- Processing page ---------- */
+/* ---------- Premium Processing Pipeline UI ---------- */
+
+.processing-container {
+    padding: 3rem 1rem 4rem;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.text-center {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.header-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    background: var(--field-soft, #ecfdf5);
+    color: var(--field, #10b981);
+    border-radius: 14px;
+    margin-bottom: 1.25rem;
+}
+
+.pulse-icon {
+    animation: gentlePulse 2s infinite;
+}
+
+@keyframes gentlePulse {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.text-center h1 {
+    font-size: 1.8rem;
+    color: var(--ink, #111827);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.text-center p {
+    color: var(--ink-soft, #4b5563);
+    font-size: 1rem;
+}
 
 .processing-wrap {
-    max-width: 520px;
-    margin: 0 auto 4rem;
-    padding: 0 2rem;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
-.processing-file {
-    font-size: 0.9rem;
-    color: #5a6b5a;
-    margin-bottom: 2rem;
+.processing-card {
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--line, #e5e7eb);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
 }
 
-.processing-file strong {
-    color: var(--geocrop-green-dark);
+/* File Badge Header */
+.file-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 2rem;
+    background: var(--paper, #f9fafb);
+    border-bottom: 1px solid var(--line, #e5e7eb);
+    color: var(--ink-soft, #4b5563);
+}
+
+.file-badge svg {
+    color: var(--field, #10b981);
+}
+
+.file-name {
+    font-size: 0.95rem;
+}
+
+.file-name strong {
+    color: var(--ink, #111827);
+    font-weight: 700;
+}
+
+/* Vertical Timeline Layout */
+.timeline-container {
+    padding: 2rem;
 }
 
 .step-list {
     list-style: none;
     margin: 0;
     padding: 0;
-    text-align: left;
-    background: #fff;
-    border: 1px solid #e0e6dc;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
 }
 
 .step-item {
     display: flex;
-    align-items: center;
-    gap: 0.9rem;
-    padding: 1rem 1.4rem;
-    border-bottom: 1px solid #eef2ea;
-    color: #9aa89a;
-    transition: color 0.2s ease;
+    gap: 1.25rem;
+    position: relative;
 }
 
-.step-item:last-child {
-    border-bottom: none;
+.step-item:not(:last-child) {
+    padding-bottom: 1.75rem;
+}
+
+.step-marker-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+/* Vertical Line Connector */
+.step-connector {
+    width: 2px;
+    height: 100%;
+    background: var(--line, #e5e7eb);
+    position: absolute;
+    top: 32px;
+    z-index: 0;
+    transition: background 0.3s ease;
 }
 
 .step-marker {
-    width: 26px;
-    height: 26px;
-    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    border: 2px solid #d6ddd0;
+    background: var(--paper, #f9fafb);
+    border: 2px solid var(--line, #e5e7eb);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 700;
-    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+    color: var(--ink-faint, #9ca3af);
+    z-index: 1;
+    transition: all 0.3s ease;
 }
 
-.step-item.active {
-    color: var(--geocrop-green-dark);
+.step-content {
+    padding-top: 0.25rem;
+    transition: opacity 0.3s ease;
+    opacity: 0.4;
+}
+
+.step-title {
+    margin: 0 0 0.2rem;
+    font-size: 1.05rem;
     font-weight: 600;
+    color: var(--ink, #111827);
 }
 
+.step-desc {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--ink-soft, #4b5563);
+}
+
+/* Active State */
 .step-item.active .step-marker {
-    border-color: var(--geocrop-green);
-    color: var(--geocrop-green);
+    border-color: var(--field, #10b981);
+    background: var(--surface, #ffffff);
+    color: var(--field, #10b981);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
 }
 
-.step-item.active .step-marker .spinner {
-    width: 12px;
-    height: 12px;
-    border: 2px solid #cfe4cc;
-    border-top-color: var(--geocrop-green);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
+.step-item.active .step-content {
+    opacity: 1;
 }
 
-.step-item.done {
-    color: var(--geocrop-green-dark);
+.step-item.active .step-title {
+    color: var(--field-dark, #047857);
 }
 
-.step-item.done .step-marker {
-    background: var(--geocrop-green);
-    border-color: var(--geocrop-green);
-    color: #fff;
+.step-item.active .step-connector {
+    /* Optional: Animate line filling up */
+    background: linear-gradient(to bottom, var(--field, #10b981) 0%, var(--line, #e5e7eb) 100%);
+}
+
+.spinner {
+    width: 18px;
+    height: 18px;
+    animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    100% { transform: rotate(360deg); }
 }
 
+/* Done State */
+.step-item.done .step-marker {
+    background: var(--field, #10b981);
+    border-color: var(--field, #10b981);
+    color: #ffffff;
+}
+
+.step-item.done .step-connector {
+    background: var(--field, #10b981);
+}
+
+.step-item.done .step-content {
+    opacity: 1;
+}
+
+/* Hint Banner */
 .processing-hint {
-    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     font-size: 0.85rem;
-    color: #8a978a;
+    color: var(--ink-soft, #4b5563);
+    background: var(--paper, #f9fafb);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px dashed var(--line, #e5e7eb);
+}
+
+@media (max-width: 480px) {
+    .processing-container { padding: 2rem 1.25rem; }
+    .file-badge { padding: 1rem 1.5rem; flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+    .timeline-container { padding: 1.5rem; }
+    .step-item { gap: 1rem; }
 }

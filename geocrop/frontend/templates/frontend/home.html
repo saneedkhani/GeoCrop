@@ -1,5 +1,5 @@
 {% extends "frontend/base.html" %}
-{% block title %}GeoCrop - Home{% endblock %}
+{% block title %}GeoCrop | Actionable Crop Intelligence{% endblock %}
 
 {% load static %}
 {% block extra_head %}
@@ -7,42 +7,125 @@
 {% endblock %}
 
 {% block content %}
-<section class="hero">
-    <div class="hero-overlay"></div>
-    <div class="hero-content">
-        <h1>Welcome to <span class="brand-highlight">GeoCrop</span></h1>
-        <p class="hero-tagline">Satellite-powered crop intelligence, mapped in real time.</p>
-    </div>
-    <div class="hero-grow">
-        <span>🌱</span><span>🌾</span><span>🌽</span><span>🌾</span><span>🌱</span>
+<section class="hero-section">
+    <div class="hero-container">
+        <div class="hero-content">
+            <span class="hero-badge">Satellite-Powered Intelligence</span>
+            <h1>Know every field before you drive to it.</h1>
+            <p class="hero-tagline">
+                GeoCrop reads satellite imagery and returns precise field boundaries, crop classifications,
+                and yield estimates on a live interactive map &mdash; turning manual ground surveys
+                into instant, desk-bound insights.
+            </p>
+            <div class="hero-actions">
+                <a href="{% url 'frontend:upload' %}" class="btn-primary">Analyze a Field</a>
+                <a href="{% url 'frontend:results' %}" class="btn-secondary">View Live Map</a>
+            </div>
+            
+            <div class="hero-metrics">
+                <div class="metric-item">
+                    <dt>US States Covered</dt>
+                    <dd>{{ hero_states|default:"12" }}</dd>
+                </div>
+                <div class="metric-item">
+                    <dt>Crops Classified</dt>
+                    <dd>{{ hero_crops|default:"6" }}</dd>
+                </div>
+                <div class="metric-item">
+                    <dt>Avg. Confidence</dt>
+                    <dd>{{ hero_confidence|default:"93%" }}</dd>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-visual-wrapper" aria-hidden="true">
+            <div class="hero-visual">
+                <!-- Retained your custom SVG, but framed beautifully -->
+                <svg viewBox="0 0 420 380" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="0" y="0" width="420" height="380" rx="24" fill="#123b26"/>
+                    <g opacity="0.95">
+                        <polygon points="30,60 160,40 190,140 60,170" fill="#d97706" opacity="0.9"/>
+                        <polygon points="170,50 300,30 320,120 195,145" fill="#1e6f47"/>
+                        <polygon points="35,180 195,155 220,250 55,280" fill="#0284c7" opacity="0.9"/>
+                        <polygon points="205,150 330,125 365,230 235,255" fill="#9a3412" opacity="0.9"/>
+                        <polygon points="60,290 230,260 260,340 95,360" fill="#1e6f47" opacity="0.8"/>
+                    </g>
+                    <g stroke="#ffffff" stroke-width="1.5" fill="none" opacity="0.8">
+                        <polygon points="30,60 160,40 190,140 60,170"/>
+                        <polygon points="170,50 300,30 320,120 195,145"/>
+                        <polygon points="35,180 195,155 220,250 55,280"/>
+                        <polygon points="205,150 330,125 365,230 235,255"/>
+                        <polygon points="60,290 230,260 260,340 95,360"/>
+                    </g>
+                    <line x1="0" y1="96" x2="420" y2="96" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
+                    <line x1="0" y1="300" x2="420" y2="300" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
+                    
+                    <!-- Enhanced Data Popup -->
+                    <circle cx="253" cy="205" r="6" fill="#ffffff" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))"/>
+                    <rect x="266" y="185" width="135" height="52" rx="8" fill="#ffffff" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.15))"/>
+                    <text x="280" y="205" font-family="Manrope, sans-serif" font-size="11" font-weight="800" fill="#0f172a">Field B2 &middot; Soybean</text>
+                    <text x="280" y="223" font-family="Manrope, sans-serif" font-size="10" font-weight="500" fill="#475569">133.2 acres &middot; 58 bu/ac</text>
+                </svg>
+            </div>
+        </div>
     </div>
 </section>
 
-<section class="intro">
-    <p>
-        GeoCrop is a satellite-based crop intelligence platform. It takes satellite imagery
-        of agricultural land and returns crop-related insights &mdash; whether the land is
-        cropland, what crop is growing, how much area it covers, and an estimated yield &mdash;
-        all visualized on an interactive map. The platform is being built and validated on
-        USA agricultural data first, with adaptation to Pakistan planned next.
-    </p>
+<section id="about" class="platform-overview">
+    <div class="overview-content">
+        <h2>The Complete Crop Intelligence Platform</h2>
+        <p>
+            GeoCrop takes raw satellite imagery of agricultural land and transforms it into actionable insights. 
+            Instantly determine whether land is active cropland, classify the exact crop type, measure the covered area, 
+            and calculate estimated yields &mdash; all visualized on a dynamic, interactive map. 
+        </p>
+        <p class="overview-note">
+            <em>Currently validated on USA agricultural datasets, with phased adaptation to Pakistan planned next.</em>
+        </p>
+    </div>
 </section>
 
-<section class="action-grid">
-    <a href="{% url 'frontend:upload' %}" class="grid-card">
-        <div class="grid-card-icon">🛰️</div>
-        <h2>Analyze Satellite Data</h2>
-        <p>Upload satellite imagery and let the model detect fields, classify crops, and estimate yield.</p>
-    </a>
-    <a href="{% url 'frontend:results' %}" class="grid-card">
-        <div class="grid-card-icon">🗺️</div>
-        <h2>Live Map View</h2>
-        <p>Explore already-analyzed fields on an interactive map with crop details and filters.</p>
-    </a>
-    <a href="{% url 'frontend:dashboard' %}" class="grid-card">
-        <div class="grid-card-icon">📊</div>
-        <h2>Dashboard View</h2>
-        <p>Explore all analyzed fields on state level with crop details.</p>
-    </a>
+<section class="features-section">
+    <div class="action-grid">
+        <a href="{% url 'frontend:upload' %}" class="feature-card">
+            <div class="card-icon-wrapper">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 4L4 9L14 19L19 14L9 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M14 4L20 10" stroke="currentColor" stroke-width="2"/>
+                    <path d="M2 22L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <h3>Analyze Imagery</h3>
+            <p>Upload raw satellite data and let our model detect fields, classify crop types, and predict yield.</p>
+            <span class="card-link">Start Analysis &rarr;</span>
+        </a>
+
+        <a href="{% url 'frontend:results' %}" class="feature-card">
+            <div class="card-icon-wrapper">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 3V19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M15 5V21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M3 5.5L9 3L15 5L21 2.5V18.5L15 21L9 19L3 21.5V5.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h3>Interactive Live Map</h3>
+            <p>Explore analyzed fields geographically. Filter by crop type, yield, and region in real-time.</p>
+            <span class="card-link">Open Map &rarr;</span>
+        </a>
+
+        <a href="{% url 'frontend:dashboard' %}" class="feature-card">
+            <div class="card-icon-wrapper">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 20V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M20 20V14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M2 20H22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <h3>Analytics Dashboard</h3>
+            <p>Compare land area, distribution, and overall yield metrics across different states and regions.</p>
+            <span class="card-link">View Dashboard &rarr;</span>
+        </a>
+    </div>
 </section>
 {% endblock %}

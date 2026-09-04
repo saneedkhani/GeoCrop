@@ -1,77 +1,106 @@
 {% extends "frontend/base.html" %}
 {% load static %}
-{% block title %}GeoCrop - Live Map View{% endblock %}
+{% block title %}GeoCrop | Live Intelligence Map{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'frontend/css/results.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Live Map View</h1>
-    <p>Explore analyzed fields on the map. Filter by country, state, or crop type.</p>
+<!-- Unified Header & Control Panel (Matches Dashboard) -->
+<div class="app-header">
+    <div class="header-content">
+        <div>
+            <h1>Live Map View</h1>
+            <p>Explore analyzed fields geographically. Filter by region or crop classification.</p>
+        </div>
+        
+        <div class="app-controls">
+            <div class="filter-group">
+                <div class="filter-field">
+                    <label for="filter-country">Country</label>
+                    <div class="select-wrapper">
+                        <select id="filter-country">
+                            <option value="">All Countries</option>
+                            {% for c in countries %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label for="filter-state">State</label>
+                    <div class="select-wrapper">
+                        <select id="filter-state">
+                            <option value="">All States</option>
+                            {% for s in states %}
+                            <option value="{{ s }}">{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-field">
+                    <label for="filter-crop">Crop Type</label>
+                    <div class="select-wrapper">
+                        <select id="filter-crop">
+                            <option value="">All Crops</option>
+                            {% for ct in crop_types %}
+                            <option value="{{ ct }}">{{ ct }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn-ghost clear-btn" id="clear-filters">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Clear
+            </button>
+        </div>
+    </div>
 </div>
 
-<div class="results-wrap">
-    <div class="filter-bar">
-        <div class="filter-field">
-            <label for="filter-country">Country</label>
-            <select id="filter-country">
-                <option value="">All countries</option>
-                {% for c in countries %}
-                <option value="{{ c }}">{{ c }}</option>
-                {% endfor %}
-            </select>
+<div class="map-workspace">
+    <!-- Sleek Metrics Strip -->
+    <div class="metrics-strip">
+        <div class="metric-item">
+            <span class="metric-label">Fields Shown</span>
+            <span class="metric-value" id="stat-fields">&mdash;</span>
         </div>
-        <div class="filter-field">
-            <label for="filter-state">State</label>
-            <select id="filter-state">
-                <option value="">All states</option>
-                {% for s in states %}
-                <option value="{{ s }}">{{ s }}</option>
-                {% endfor %}
-            </select>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+            <span class="metric-label">Crop Types</span>
+            <span class="metric-value" id="stat-crop-types">&mdash;</span>
         </div>
-        <div class="filter-field">
-            <label for="filter-crop">Crop type</label>
-            <select id="filter-crop">
-                <option value="">All crops</option>
-                {% for ct in crop_types %}
-                <option value="{{ ct }}">{{ ct }}</option>
-                {% endfor %}
-            </select>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+            <span class="metric-label">Total Area</span>
+            <span class="metric-value" id="stat-area">&mdash; <small>ac</small></span>
         </div>
-        <button type="button" class="btn-secondary" id="clear-filters">Clear filters</button>
-    </div>
-
-    <div class="stats-bar">
-        <div class="stat-card">
-            <div class="stat-label">Fields shown</div>
-            <div class="stat-value" id="stat-fields">&mdash;</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Crop types</div>
-            <div class="stat-value" id="stat-crop-types">&mdash;</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Total area (acres)</div>
-            <div class="stat-value" id="stat-area">&mdash;</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Avg. yield</div>
-            <div class="stat-value" id="stat-yield">&mdash;</div>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+            <span class="metric-label">Avg. Yield</span>
+            <span class="metric-value" id="stat-yield">&mdash; <small>bu/ac</small></span>
         </div>
     </div>
 
-    <div class="map-row">
-        <div class="map-legend" id="map-legend">
-            <div class="legend-title">Crop Types</div>
+    <!-- Immersive Map Area -->
+    <div class="map-container-wrapper">
+        <div id="map"></div>
+        
+        <!-- Floating Legend Overlay -->
+        <div class="floating-legend" id="map-legend">
+            <div class="legend-title">Crop Classifications</div>
+            <!-- Legend items injected by map.js -->
         </div>
-        <div class="map-container">
-                <div id="map"></div>
+
+        <!-- Styled Empty State Overlay -->
+        <div class="no-results-overlay" id="no-results">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.5rem; opacity: 0.5;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>No fields match the selected filters.</span>
         </div>
     </div>
-    <div class="no-results" id="no-results">No fields match the selected filters.</div>
 </div>
 {% endblock %}
 

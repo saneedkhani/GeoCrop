@@ -1,48 +1,65 @@
 {% extends "frontend/base.html" %}
 {% load static %}
-{% block title %}GeoCrop - Sign Up{% endblock %}
+{% block title %}GeoCrop | Create Account{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'frontend/css/auth.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Create Your Account</h1>
-    <p>Sign up to access your GeoCrop profile.</p>
-</div>
-
 <div class="auth-wrap">
-    <form class="auth-form" method="post">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ next }}">
-
-        {% if error %}
-        <div class="form-error">{{ error }}</div>
-        {% endif %}
-
-        <div class="form-field">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" value="{{ username|default:'' }}" required autofocus>
-        </div>
-        <div class="form-field">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" value="{{ email|default:'' }}" required>
-        </div>
-        <div class="form-field">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        <div class="form-field">
-            <label for="confirm_password">Confirm password</label>
-            <input type="password" id="confirm_password" name="confirm_password" required>
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+            </div>
+            <h1>Create an account</h1>
+            <p>Start analyzing satellite imagery today.</p>
         </div>
 
-        <button type="submit" class="btn-primary">Sign Up</button>
-    </form>
-    <p class="auth-switch">
-        Already have an account?
-        <a href="{% url 'frontend:login' %}{% if next %}?next={{ next }}{% endif %}">Log in</a>
-    </p>
+        <form class="auth-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+
+            {% if error %}
+            <div class="form-error">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <div class="form-field floating-label">
+                <input type="text" id="username" name="username" value="{{ username|default:'' }}" placeholder=" " required autofocus>
+                <label for="username">Username</label>
+            </div>
+            
+            <div class="form-field floating-label">
+                <input type="email" id="email" name="email" value="{{ email|default:'' }}" placeholder=" " required>
+                <label for="email">Work Email</label>
+            </div>
+            
+            <div class="form-field floating-label">
+                <input type="password" id="password" name="password" placeholder=" " required>
+                <label for="password">Password</label>
+            </div>
+            
+            <div class="form-field floating-label">
+                <input type="password" id="confirm_password" name="confirm_password" placeholder=" " required>
+                <label for="confirm_password">Confirm Password</label>
+            </div>
+
+            <button type="submit" class="btn-primary btn-full">Create Account</button>
+        </form>
+        
+        <div class="auth-footer">
+            Already have an account? 
+            <a href="{% url 'frontend:login' %}{% if next %}?next={{ next }}{% endif %}">Log in here</a>
+        </div>
+    </div>
 </div>
 {% endblock %}

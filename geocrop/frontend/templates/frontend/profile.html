@@ -1,41 +1,72 @@
 {% extends "frontend/base.html" %}
 {% load static %}
-{% block title %}GeoCrop - Profile{% endblock %}
+{% block title %}GeoCrop | Account Profile{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'frontend/css/profile.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Profile</h1>
-    <p>Your GeoCrop account details and recent activity.</p>
-</div>
-
-<div class="profile-wrap">
-    <div class="profile-card">
-        <div class="profile-avatar">{{ request.user.username|slice:":1"|upper }}</div>
-        <div class="profile-info">
-            <div class="profile-name">{{ request.user.username }}</div>
-            <div class="profile-email">{{ request.user.email }}</div>
-        </div>
-        <a href="{% url 'frontend:logout' %}" class="btn-secondary profile-logout">Log out</a>
+<div class="profile-container">
+    <div class="page-header text-center">
+        <h1>Account Overview</h1>
+        <p>Manage your GeoCrop profile and view your recent satellite data analysis records.</p>
     </div>
 
-    <div class="activity-panel">
-        <h2>Satellite Data Records</h2>
-        <ul class="activity-list">
-            {% for a in activities %}
-            <li>
-                <div class="activity-desc">{{ a.description }}</div>
-                <div class="activity-detail">{{ a.detail }}</div>
-            </li>
-            {% empty %}
-            <li class="activity-empty">
-                No records yet &mdash; upload satellite data to see it here.
-            </li>
-            {% endfor %}
-        </ul>
+    <div class="profile-wrap">
+        <!-- Elevated Profile Card -->
+        <div class="profile-card">
+            <div class="profile-header-bg"></div>
+            <div class="profile-content">
+                <div class="profile-avatar">
+                    {{ request.user.username|slice:":1"|upper }}
+                </div>
+                <div class="profile-info">
+                    <h2 class="profile-name">{{ request.user.username }}</h2>
+                    <div class="profile-email">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        {{ request.user.email }}
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <a href="{% url 'frontend:logout' %}" class="btn-logout">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        Secure Log Out
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modern Activity Timeline -->
+        <div class="activity-panel">
+            <div class="activity-header">
+                <div class="header-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                </div>
+                <h2>Satellite Data Records</h2>
+            </div>
+            
+            <ul class="activity-list">
+                {% for a in activities %}
+                <li class="activity-item">
+                    <div class="activity-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                    </div>
+                    <div class="activity-body">
+                        <div class="activity-desc">{{ a.description }}</div>
+                        <div class="activity-detail">{{ a.detail }}</div>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="activity-empty">
+                    <div class="empty-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    </div>
+                    <span>No records yet &mdash; upload satellite data to see it here.</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,53 +1,108 @@
 {% extends "frontend/base.html" %}
 {% load static %}
-{% block title %}GeoCrop - Analyze Satellite Data{% endblock %}
+{% block title %}GeoCrop | Analyze Imagery{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'frontend/css/upload.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Analyze Satellite Data</h1>
-    <p>Upload a satellite image of your field. GeoCrop will detect field boundaries,
-       classify the crop, and estimate yield.</p>
-</div>
-
-<div class="upload-wrap">
-    <form class="upload-form" method="post" enctype="multipart/form-data" id="upload-form">
-        {% csrf_token %}
-
-        <label class="dropzone" id="dropzone" for="satellite_image">
-            <input type="file" id="satellite_image" name="satellite_image" accept="image/*,.tif,.tiff">
-            <div class="dropzone-icon">🛰️</div>
-            <div class="dropzone-text">
-                <strong>Click to upload or drag and drop</strong>
-                <span>Satellite imagery &mdash; JPG, PNG, TIFF</span>
-            </div>
-            <div class="dropzone-filename" id="dropzone-filename"></div>
-        </label>
-
-        <div class="form-row">
-            <div class="form-field">
-                <label for="location">Location (optional)</label>
-                <input type="text" id="location" name="location" placeholder="e.g. Story County, Iowa">
-            </div>
-            <div class="form-field">
-                <label for="capture_date">Capture date (optional)</label>
-                <input type="date" id="capture_date" name="capture_date">
-            </div>
+<div class="upload-container">
+    <div class="upload-header">
+        <div class="header-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M17 8L12 3L7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 3V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
         </div>
+        <h1>Process Satellite Data</h1>
+        <p>Upload raw imagery to automatically detect boundaries, classify crops, and generate yield intelligence.</p>
+    </div>
 
-        {% if error %}
-        <div class="form-error">{{ error }}</div>
-        {% else %}
-        <div class="form-error" id="form-error" style="display: none;">
-            Please select a satellite image before analyzing.
-        </div>
-        {% endif %}
+    <div class="upload-card">
+        <form class="upload-form" method="post" enctype="multipart/form-data" id="upload-form">
+            {% csrf_token %}
 
-        <button type="submit" class="btn-primary" id="analyze-btn">Analyze</button>
-    </form>
+            <!-- Enhanced Dropzone -->
+            <div class="dropzone-wrapper">
+                <label class="dropzone" id="dropzone" for="satellite_image">
+                    <input type="file" id="satellite_image" name="satellite_image" accept="image/*,.tif,.tiff">
+                    
+                    <div class="dropzone-content" id="dropzone-content-default">
+                        <div class="icon-circle">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                        </div>
+                        <div class="dropzone-text">
+                            <strong>Click to browse</strong> or drag file here
+                        </div>
+                        <div class="dropzone-hints">
+                            <span>Supported: GeoTIFF, TIFF, JPG, PNG</span>
+                            <span class="dot-separator">&middot;</span>
+                            <span>Max size: 50MB</span>
+                        </div>
+                    </div>
+                    
+                    <!-- State shown when file is selected -->
+                    <div class="dropzone-content dropzone-success" id="dropzone-content-success" style="display: none;">
+                        <div class="icon-circle success">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                        </div>
+                        <div class="dropzone-filename" id="dropzone-filename"></div>
+                        <div class="dropzone-reselect">Click to choose a different file</div>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Enhanced Metadata Fields -->
+            <div class="metadata-section">
+                <div class="section-title">Contextual Data <span class="badge">Optional</span></div>
+                <div class="form-row">
+                    <div class="form-field floating-label">
+                        <input type="text" id="location" name="location" placeholder=" ">
+                        <label for="location">Location (e.g., Story County, IA)</label>
+                    </div>
+                    <div class="form-field floating-label">
+                        <input type="date" id="capture_date" name="capture_date" placeholder=" ">
+                        <label for="capture_date">Image Capture Date</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Handling -->
+            {% if error %}
+            <div class="alert alert-error">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span>{{ error }}</span>
+            </div>
+            {% else %}
+            <div class="alert alert-error" id="form-error" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span>Please select a satellite image before analyzing.</span>
+            </div>
+            {% endif %}
+
+            <!-- Action Area -->
+            <div class="form-actions">
+                <button type="submit" class="btn-primary btn-large" id="analyze-btn">
+                    <span class="btn-text">Run Intelligence Analysis</span>
+                    <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="security-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Secure, encrypted processing
+    </div>
 </div>
 {% endblock %}
 
@@ -55,15 +110,26 @@
 <script>
     const fileInput = document.getElementById('satellite_image');
     const dropzone = document.getElementById('dropzone');
+    const defaultContent = document.getElementById('dropzone-content-default');
+    const successContent = document.getElementById('dropzone-content-success');
     const filenameEl = document.getElementById('dropzone-filename');
     const form = document.getElementById('upload-form');
     const errorEl = document.getElementById('form-error');
+    const analyzeBtn = document.getElementById('analyze-btn');
 
-    fileInput.addEventListener('change', () => {
-        if (fileInput.files.length) {
-            filenameEl.textContent = 'Selected: ' + fileInput.files[0].name;
+    // UI update function when file is selected
+    const handleFileSelect = (files) => {
+        if (files.length) {
+            defaultContent.style.display = 'none';
+            successContent.style.display = 'flex';
+            filenameEl.textContent = files[0].name;
+            dropzone.classList.add('has-file');
             if (errorEl) errorEl.style.display = 'none';
         }
+    };
+
+    fileInput.addEventListener('change', () => {
+        handleFileSelect(fileInput.files);
     });
 
     ['dragover', 'dragenter'].forEach(evt => {
@@ -83,15 +149,18 @@
     dropzone.addEventListener('drop', (e) => {
         if (e.dataTransfer.files.length) {
             fileInput.files = e.dataTransfer.files;
-            filenameEl.textContent = 'Selected: ' + e.dataTransfer.files[0].name;
-            if (errorEl) errorEl.style.display = 'none';
+            handleFileSelect(e.dataTransfer.files);
         }
     });
 
     form.addEventListener('submit', (e) => {
         if (!fileInput.files.length) {
             e.preventDefault();
-            if (errorEl) errorEl.style.display = 'block';
+            if (errorEl) errorEl.style.display = 'flex';
+        } else {
+            // Processing state UX
+            analyzeBtn.classList.add('btn-processing');
+            analyzeBtn.innerHTML = '<div class="spinner"></div><span class="btn-text">Analyzing imagery...</span>';
         }
     });
 </script>

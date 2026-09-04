@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-*w+3sd!bapw$^=ejsc$(v4*g)e37$k4tcy(ero+^e+scq*p)s1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.vercel.app',    '192.168.6.225', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -116,6 +116,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Where @login_required redirects unauthenticated users (e.g. the profile page)
 LOGIN_URL = 'frontend:login'

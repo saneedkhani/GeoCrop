@@ -1,17 +1,58 @@
-/* ---------- Upload page ---------- */
+/* ---------- Premium Upload & Processing UI ---------- */
 
-.upload-wrap {
-    max-width: 560px;
-    margin: 0 auto 4rem;
+.upload-container {
+    max-width: 640px;
+    margin: 4rem auto 6rem;
     padding: 0 2rem;
 }
 
-.upload-form {
-    background: #fff;
-    border: 1px solid #e0e6dc;
+.upload-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.header-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--field-soft, #ecfdf5);
+    color: var(--field, #10b981);
     border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    margin-bottom: 1rem;
+}
+
+.upload-header h1 {
+    font-size: 2rem;
+    color: var(--ink, #111827);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.upload-header p {
+    font-size: 1rem;
+    color: var(--ink-soft, #4b5563);
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.upload-card {
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--line, #e5e7eb);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.upload-form {
+    padding: 2.5rem;
+}
+
+/* Enhanced Dropzone */
+.dropzone-wrapper {
+    margin-bottom: 2rem;
 }
 
 .dropzone {
@@ -20,108 +61,252 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    border: 2px dashed #b7cdb2;
-    border-radius: 10px;
-    padding: 2.5rem 1.5rem;
+    border: 2px dashed var(--line, #e5e7eb);
+    border-radius: 12px;
+    padding: 3rem 2rem;
     cursor: pointer;
-    transition: border-color 0.18s ease, background 0.18s ease;
-    background: #f9fbf7;
+    background: var(--paper, #f9fafb);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.dropzone:hover,
-.dropzone.dragover {
-    border-color: var(--geocrop-green);
-    background: #f0f7ee;
+.dropzone::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--field-soft, #ecfdf5);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 0;
+}
+
+.dropzone:hover, .dropzone.dragover {
+    border-color: var(--field, #10b981);
+}
+
+.dropzone:hover::before, .dropzone.dragover::before {
+    opacity: 0.5;
+}
+
+.dropzone.has-file {
+    border: 2px solid var(--field, #10b981);
+    background: var(--surface, #ffffff);
 }
 
 .dropzone input[type="file"] {
     display: none;
 }
 
-.dropzone-icon {
-    font-size: 2.4rem;
-    margin-bottom: 0.6rem;
+.dropzone-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.icon-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    color: var(--ink-soft, #4b5563);
+    margin-bottom: 1.25rem;
+}
+
+.icon-circle.success {
+    color: var(--field, #10b981);
+}
+
+.dropzone-text {
+    font-size: 1.05rem;
+    color: var(--ink-soft, #4b5563);
+    margin-bottom: 0.5rem;
 }
 
 .dropzone-text strong {
-    display: block;
-    color: var(--geocrop-green-dark);
+    color: var(--field-dark, #047857);
+    text-decoration: underline;
+    text-decoration-color: var(--field, #10b981);
+    text-underline-offset: 4px;
 }
 
-.dropzone-text span {
-    font-size: 0.85rem;
-    color: #5a6b5a;
+.dropzone-hints {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--ink-faint, #6b7280);
 }
+
+.dot-separator { font-size: 1.2rem; line-height: 0; }
 
 .dropzone-filename {
-    margin-top: 0.8rem;
-    font-size: 0.88rem;
-    color: var(--geocrop-green-dark);
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink, #111827);
+    margin-bottom: 0.25rem;
+    word-break: break-all;
+}
+
+.dropzone-reselect {
+    font-size: 0.85rem;
+    color: var(--ink-faint, #6b7280);
+}
+
+/* Contextual Metadata Section */
+.metadata-section {
+    background: var(--paper, #f9fafb);
+    border: 1px solid var(--line, #e5e7eb);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink, #111827);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.badge {
+    background: #e5e7eb;
+    color: #4b5563;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .form-row {
     display: flex;
     gap: 1rem;
-    margin-top: 1.5rem;
 }
 
-.form-field {
+/* Floating Label Inputs */
+.floating-label {
+    position: relative;
     flex: 1;
-    display: flex;
-    flex-direction: column;
 }
 
-.form-field label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-bottom: 0.35rem;
-    color: #33402f;
-}
-
-.form-field input,
-.form-field select {
-    padding: 0.55rem 0.7rem;
-    border: 1px solid #ccd6c6;
-    border-radius: 6px;
-    font-size: 0.92rem;
-    font-family: inherit;
-}
-
-.btn-primary {
-    display: block;
+.floating-label input {
     width: 100%;
-    margin-top: 1.8rem;
-    padding: 0.8rem;
-    background: var(--geocrop-green);
-    color: #fff;
-    border: none;
+    padding: 1.25rem 1rem 0.5rem;
+    border: 1px solid var(--line, #e5e7eb);
     border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.18s ease;
+    font-size: 0.95rem;
+    background: var(--surface, #ffffff);
+    color: var(--ink, #111827);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.btn-primary:hover {
-    background: var(--geocrop-green-dark);
+.floating-label label {
+    position: absolute;
+    top: 50%;
+    left: 1rem;
+    transform: translateY(-50%);
+    font-size: 0.95rem;
+    color: var(--ink-soft, #4b5563);
+    pointer-events: none;
+    transition: all 0.2s ease;
 }
 
-.btn-primary:disabled {
-    background: #a9c2a4;
-    cursor: not-allowed;
+.floating-label input:focus,
+.floating-label input:not(:placeholder-shown) {
+    outline: none;
+    border-color: var(--field, #10b981);
 }
 
-.form-error {
-    margin-top: 1rem;
-    padding: 0.7rem 1rem;
-    background: #fdecea;
-    border: 1px solid #f5c2bd;
-    color: #a1332a;
+.floating-label input:focus + label,
+.floating-label input:not(:placeholder-shown) + label {
+    top: 0.65rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--field, #10b981);
+}
+
+/* Error Alerts */
+.alert {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
     border-radius: 8px;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
 }
 
-@media (max-width: 480px) {
+.alert-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+}
+
+/* Action Button */
+.btn-large {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn-large:hover {
+    gap: 0.75rem;
+}
+
+/* Processing State */
+.btn-processing {
+    background: var(--field-dark, #047857);
+    cursor: wait;
+    pointer-events: none;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #ffffff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Security Trust Marker */
+.security-badge {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.8rem;
+    color: var(--ink-faint, #6b7280);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+@media (max-width: 640px) {
+    .upload-container { padding: 0 1.25rem; margin-top: 2rem; }
+    .upload-form { padding: 1.5rem; }
     .form-row { flex-direction: column; }
+    .dropzone { padding: 2rem 1rem; }
+    .dropzone-hints { flex-direction: column; gap: 0.25rem; }
+    .dot-separator { display: none; }
 }

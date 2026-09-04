@@ -1,64 +1,123 @@
 {% extends "frontend/base.html" %}
 {% load static %}
-{% block title %}GeoCrop - Processing{% endblock %}
+{% block title %}GeoCrop | Running Pipeline{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'frontend/css/processing.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Analyzing Your Field</h1>
-    <p>Sit tight &mdash; GeoCrop is running your satellite image through the pipeline.</p>
-</div>
+<div class="processing-container">
+    <div class="page-header text-center">
+        <div class="header-icon pulse-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+        </div>
+        <h1>Running Intelligence Pipeline</h1>
+        <p>Please wait while GeoCrop analyzes your satellite imagery.</p>
+    </div>
 
-<div class="processing-wrap">
-    {% if upload_filename %}
-    <div class="processing-file">Analyzing <strong>{{ upload_filename }}</strong></div>
-    {% endif %}
+    <div class="processing-wrap">
+        <div class="processing-card">
+            
+            {% if upload_filename %}
+            <div class="file-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                <div class="file-name">Processing: <strong>{{ upload_filename }}</strong></div>
+            </div>
+            {% endif %}
 
-    <ul class="step-list" id="step-list">
-        <li class="step-item" data-step="0">
-            <span class="step-marker"><span class="num">1</span></span>
-            <span>Uploading imagery</span>
-        </li>
-        <li class="step-item" data-step="1">
-            <span class="step-marker"><span class="num">2</span></span>
-            <span>Preprocessing image</span>
-        </li>
-        <li class="step-item" data-step="2">
-            <span class="step-marker"><span class="num">3</span></span>
-            <span>Detecting fields</span>
-        </li>
-        <li class="step-item" data-step="3">
-            <span class="step-marker"><span class="num">4</span></span>
-            <span>Classifying crops</span>
-        </li>
-        <li class="step-item" data-step="4">
-            <span class="step-marker"><span class="num">5</span></span>
-            <span>Estimating yield</span>
-        </li>
-    </ul>
+            <div class="timeline-container">
+                <ul class="step-list" id="step-list">
+                    <li class="step-item" data-step="0">
+                        <div class="step-marker-wrap">
+                            <div class="step-marker"><span class="num">1</span></div>
+                            <div class="step-connector"></div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Uploading imagery</h3>
+                            <p class="step-desc">Transferring raw data to secure server</p>
+                        </div>
+                    </li>
+                    <li class="step-item" data-step="1">
+                        <div class="step-marker-wrap">
+                            <div class="step-marker"><span class="num">2</span></div>
+                            <div class="step-connector"></div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Preprocessing image</h3>
+                            <p class="step-desc">Normalizing bands and removing cloud cover</p>
+                        </div>
+                    </li>
+                    <li class="step-item" data-step="2">
+                        <div class="step-marker-wrap">
+                            <div class="step-marker"><span class="num">3</span></div>
+                            <div class="step-connector"></div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Detecting fields</h3>
+                            <p class="step-desc">Mapping exact agricultural boundaries</p>
+                        </div>
+                    </li>
+                    <li class="step-item" data-step="3">
+                        <div class="step-marker-wrap">
+                            <div class="step-marker"><span class="num">4</span></div>
+                            <div class="step-connector"></div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Classifying crops</h3>
+                            <p class="step-desc">Running ML models to identify crop types</p>
+                        </div>
+                    </li>
+                    <li class="step-item" data-step="4">
+                        <div class="step-marker-wrap">
+                            <div class="step-marker"><span class="num">5</span></div>
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">Estimating yield</h3>
+                            <p class="step-desc">Calculating projected harvest metrics</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
 
-    <div class="processing-hint">This is a prototype &mdash; results are simulated with dummy data.</div>
+        <div class="processing-hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            This is a prototype &mdash; results are simulated with dummy data.
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
     const steps = document.querySelectorAll('.step-item');
-    const stepDurationMs = 900;
+    const stepDurationMs = 1200; // Slightly longer for premium feel
     let current = 0;
+
+    // Premium SVGs for states
+    const spinnerSvg = `<svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
+    const checkSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
     function markStep(index) {
         steps.forEach((el, i) => {
             el.classList.remove('active', 'done');
+            const marker = el.querySelector('.step-marker');
+            
             if (i < index) {
                 el.classList.add('done');
-                el.querySelector('.step-marker').innerHTML = '&#10003;';
+                marker.innerHTML = checkSvg;
             } else if (i === index) {
                 el.classList.add('active');
-                el.querySelector('.step-marker').innerHTML = '<span class="spinner"></span>';
+                marker.innerHTML = spinnerSvg;
+            } else {
+                // Reset future steps if needed
+                marker.innerHTML = `<span class="num">${i + 1}</span>`;
             }
         });
     }
@@ -66,15 +125,17 @@
     function advance() {
         markStep(current);
         current += 1;
-        if (current < steps.length) {
+        if (current <= steps.length) {
             setTimeout(advance, stepDurationMs);
         } else {
+            // Give a tiny pause after the last step finishes before redirecting
             setTimeout(() => {
                 window.location.href = "{% url 'frontend:results' %}";
-            }, stepDurationMs);
+            }, 600);
         }
     }
 
+    // Start pipeline
     advance();
 </script>
 {% endblock %}

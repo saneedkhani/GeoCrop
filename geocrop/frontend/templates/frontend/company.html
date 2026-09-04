@@ -1,0 +1,71 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+{% block title %}GeoCrop | Our Story{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'frontend/css/company.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="company-container">
+    <!-- Hero Section -->
+    <div class="company-hero">
+        <div class="hero-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+            </svg>
+        </div>
+        <h1>Empowering Global Agriculture</h1>
+        <p class="hero-subtitle">We build advanced satellite intelligence tools to help agribusinesses maximize yield, monitor field health, and drive sustainable farming practices at scale.</p>
+    </div>
+
+    <!-- Mission & Vision Split -->
+    <div class="mission-section">
+        <div class="mission-card">
+            <h3>Our Mission</h3>
+            <p>To democratize access to high-resolution geospatial data, turning raw satellite imagery into actionable agricultural intelligence within seconds.</p>
+        </div>
+        <div class="mission-card">
+            <h3>Our Vision</h3>
+            <p>A future where every agricultural decision is backed by precise, real-time planetary data, ensuring global food security and environmental sustainability.</p>
+        </div>
+    </div>
+
+    <!-- Core Values Grid -->
+    <div class="values-section">
+        <h2 class="section-title">Core Principles</h2>
+        <div class="values-grid">
+            <div class="value-item">
+                <div class="value-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>
+                </div>
+                <h4>Global Scale</h4>
+                <p>Our pipeline processes terabytes of data daily, providing insights across continents without compromising speed or accuracy.</p>
+            </div>
+            <div class="value-item">
+                <div class="value-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                </div>
+                <h4>Real-Time Precision</h4>
+                <p>We leverage cutting-edge machine learning to deliver field-level classification and yield estimations instantly.</p>
+            </div>
+            <div class="value-item">
+                <div class="value-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                </div>
+                <h4>Secure Infrastructure</h4>
+                <p>Enterprise-grade encryption ensures that your proprietary field data and analytics remain entirely confidential and protected.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="cta-section">
+        <h2>Ready to transform your workflow?</h2>
+        <p>Start running satellite intelligence on your fields today.</p>
+        <a href="{% url 'frontend:upload' %}" class="btn-primary">Launch Analytics Engine</a>
+    </div>
+</div>
+{% endblock %}

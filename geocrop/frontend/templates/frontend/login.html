@@ -1,40 +1,53 @@
 {% extends "frontend/base.html" %}
 {% load static %}
-{% block title %}GeoCrop - Log In{% endblock %}
+{% block title %}GeoCrop | Secure Login{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'frontend/css/auth.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Log In</h1>
-    <p>Log in to view your GeoCrop profile and activity.</p>
-</div>
-
 <div class="auth-wrap">
-    <form class="auth-form" method="post">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ next }}">
-
-        {% if error %}
-        <div class="form-error">{{ error }}</div>
-        {% endif %}
-
-        <div class="form-field">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" value="{{ username|default:'' }}" required autofocus>
-        </div>
-        <div class="form-field">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </div>
+            <h1>Welcome back</h1>
+            <p>Enter your credentials to access your workspace.</p>
         </div>
 
-        <button type="submit" class="btn-primary">Log In</button>
-    </form>
-    <p class="auth-switch">
-        Don't have an account?
-        <a href="{% url 'frontend:signup' %}{% if next %}?next={{ next }}{% endif %}">Sign up</a>
-    </p>
+        <form class="auth-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+
+            {% if error %}
+            <div class="form-error">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <div class="form-field floating-label">
+                <input type="text" id="username" name="username" value="{{ username|default:'' }}" placeholder=" " required autofocus>
+                <label for="username">Username</label>
+            </div>
+            
+            <div class="form-field floating-label">
+                <input type="password" id="password" name="password" placeholder=" " required>
+                <label for="password">Password</label>
+            </div>
+
+            <button type="submit" class="btn-primary btn-full">Secure Log In</button>
+        </form>
+        
+        <div class="auth-footer">
+            Don't have an account? 
+            <a href="{% url 'frontend:signup' %}{% if next %}?next={{ next }}{% endif %}">Sign up for access</a>
+        </div>
+    </div>
 </div>
 {% endblock %}

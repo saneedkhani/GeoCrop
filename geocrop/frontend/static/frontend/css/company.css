@@ -1,0 +1,175 @@
+/* ---------- Premium Company Story UI ---------- */
+
+.company-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 4rem 1.5rem 6rem;
+}
+
+/* Hero Section */
+.company-hero {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.hero-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: var(--field-soft, #ecfdf5);
+    color: var(--field, #10b981);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+}
+
+.company-hero h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--ink, #111827);
+    margin: 0 0 1rem;
+    letter-spacing: -0.03em;
+}
+
+.hero-subtitle {
+    font-size: 1.15rem;
+    color: var(--ink-soft, #4b5563);
+    max-width: 680px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Mission & Vision Split */
+.mission-section {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 5rem;
+}
+
+.mission-card {
+    flex: 1;
+    background: var(--surface, #ffffff);
+    padding: 2.5rem;
+    border: 1px solid var(--line, #e5e7eb);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+.mission-card h3 {
+    font-size: 1.25rem;
+    color: var(--field-dark, #047857);
+    margin: 0 0 1rem;
+    font-weight: 700;
+}
+
+.mission-card p {
+    font-size: 1rem;
+    color: var(--ink-soft, #4b5563);
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Core Values Grid */
+.values-section {
+    margin-bottom: 5rem;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 1.8rem;
+    color: var(--ink, #111827);
+    margin-bottom: 2.5rem;
+    font-weight: 800;
+}
+
+.values-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+.value-item {
+    background: var(--paper, #f9fafb);
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid var(--line, #e5e7eb);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.value-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.05);
+    background: var(--surface, #ffffff);
+    border-color: var(--field, #10b981);
+}
+
+.value-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--line, #e5e7eb);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--field, #10b981);
+    margin-bottom: 1.25rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.value-item h4 {
+    font-size: 1.1rem;
+    color: var(--ink, #111827);
+    margin: 0 0 0.5rem;
+    font-weight: 700;
+}
+
+.value-item p {
+    font-size: 0.9rem;
+    color: var(--ink-soft, #4b5563);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Call to Action */
+.cta-section {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: linear-gradient(135deg, var(--field, #10b981) 0%, var(--field-dark, #047857) 100%);
+    border-radius: 16px;
+    color: #ffffff;
+}
+
+.cta-section h2 {
+    font-size: 2rem;
+    margin: 0 0 0.75rem;
+    font-weight: 800;
+}
+
+.cta-section p {
+    font-size: 1.1rem;
+    margin: 0 0 2rem;
+    opacity: 0.9;
+}
+
+.cta-section .btn-primary {
+    background: #ffffff;
+    color: var(--field-dark, #047857);
+    padding: 0.85rem 2rem;
+    font-size: 1.05rem;
+    border: none;
+}
+
+.cta-section .btn-primary:hover {
+    background: var(--paper, #f9fafb);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .mission-section { flex-direction: column; gap: 1.5rem; }
+    .values-grid { grid-template-columns: 1fr; }
+    .company-hero h1 { font-size: 2.2rem; }
+}

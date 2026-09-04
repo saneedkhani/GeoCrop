@@ -1,86 +1,152 @@
-/* ---------- Profile page ---------- */
+/* ---------- Premium Profile & Activity UI ---------- */
 
-.profile-wrap {
-    max-width: 620px;
-    margin: 0 auto 4rem;
-    padding: 0 2rem;
+.profile-container {
+    padding: 2rem 1rem 4rem;
+    max-width: 768px;
+    margin: 0 auto;
 }
 
-.profile-card {
+.text-center {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.text-center h1 {
+    font-size: 1.8rem;
+    color: var(--ink, #111827);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.text-center p {
+    color: var(--ink-soft, #4b5563);
+    font-size: 1rem;
+}
+
+.profile-wrap {
     display: flex;
-    align-items: center;
-    gap: 1.1rem;
-    background: #fff;
-    border-radius: 12px;
-    padding: 1.6rem 1.8rem;
-    box-shadow: 0 3px 10px rgba(23, 57, 44, 0.07);
-    margin-bottom: 1.5rem;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Elevated Profile Card */
+.profile-card {
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--line, #e5e7eb);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    position: relative;
+}
+
+.profile-header-bg {
+    height: 80px;
+    background: linear-gradient(135deg, var(--field, #10b981) 0%, var(--field-dark, #047857) 100%);
+}
+
+.profile-content {
+    display: flex;
+    align-items: flex-end;
+    padding: 0 2rem 2rem;
+    gap: 1.5rem;
+    margin-top: -40px;
 }
 
 .profile-avatar {
-    width: 56px;
-    height: 56px;
+    width: 80px;
+    height: 80px;
     flex-shrink: 0;
     border-radius: 50%;
-    background: var(--geocrop-green);
-    color: #fff;
+    background: var(--surface, #ffffff);
+    border: 4px solid var(--surface, #ffffff);
+    color: var(--field-dark, #047857);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 2rem;
+    font-weight: 800;
 }
 
 .profile-info {
     flex: 1;
+    padding-bottom: 0.25rem;
 }
 
 .profile-name {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #17392c;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--ink, #111827);
+    margin: 0 0 0.25rem 0;
 }
 
 .profile-email {
-    font-size: 0.9rem;
-    color: #5a6b5a;
-    margin-top: 0.15rem;
+    font-size: 0.95rem;
+    color: var(--ink-soft, #4b5563);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
 }
 
-.profile-logout {
-    flex-shrink: 0;
-    text-decoration: none;
+.profile-actions {
+    padding-bottom: 0.5rem;
 }
 
-.btn-secondary {
-    padding: 0.55rem 1.1rem;
-    background: #eef2ea;
-    border: 1px solid #ccd6c6;
-    border-radius: 6px;
-    font-size: 0.85rem;
+.btn-logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: var(--paper, #f9fafb);
+    border: 1px solid var(--line, #e5e7eb);
+    color: var(--ink-soft, #4b5563);
     font-weight: 600;
-    color: #33402f;
-    cursor: pointer;
-    transition: background 0.18s ease;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s ease;
 }
 
-.btn-secondary:hover {
-    background: #dfe8d9;
+.btn-logout:hover {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
 }
 
+/* Modern Activity Timeline */
 .activity-panel {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 3px 10px rgba(23, 57, 44, 0.07);
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--line, #e5e7eb);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
     overflow: hidden;
 }
 
-.activity-panel h2 {
-    font-size: 1rem;
-    color: #17392c;
+.activity-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--line, #e5e7eb);
+    background: var(--paper, #f9fafb);
+}
+
+.header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: #e0e7ff;
+    color: #4f46e5;
+    border-radius: 8px;
+}
+
+.activity-header h2 {
+    font-size: 1.1rem;
+    color: var(--ink, #111827);
     margin: 0;
-    padding: 1.1rem 1.4rem 0.9rem;
-    border-bottom: 1px solid #eef2ea;
+    font-weight: 700;
 }
 
 .activity-list {
@@ -89,24 +155,81 @@
     padding: 0;
 }
 
-.activity-list li {
-    padding: 0.9rem 1.4rem;
-    border-bottom: 1px solid #f4f7f1;
+.activity-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1.25rem 2rem;
+    border-bottom: 1px solid var(--line, #e5e7eb);
+    transition: background 0.2s ease;
 }
 
-.activity-list li:last-child {
+.activity-item:hover {
+    background: var(--paper, #f9fafb);
+}
+
+.activity-item:last-child {
     border-bottom: none;
 }
 
+.activity-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--field-soft, #ecfdf5);
+    color: var(--field, #10b981);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.activity-body {
+    flex: 1;
+}
+
 .activity-desc {
-    font-size: 0.92rem;
-    color: #17392c;
+    font-size: 1rem;
+    color: var(--ink, #111827);
     font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.activity-detail {
+    font-size: 0.85rem;
+    color: var(--ink-soft, #4b5563);
 }
 
 .activity-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 3rem 2rem !important;
     text-align: center;
-    color: #8a978a;
-    font-size: 0.9rem;
-    padding: 1.4rem !important;
+    color: var(--ink-faint, #6b7280);
+    font-size: 0.95rem;
+    background: var(--surface, #ffffff);
+}
+
+.empty-icon {
+    color: #d1d5db;
+}
+
+/* Responsive Profiles */
+@media (max-width: 640px) {
+    .profile-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1rem;
+        margin-top: -50px;
+    }
+    
+    .profile-avatar { width: 100px; height: 100px; font-size: 2.5rem; }
+    .profile-email { justify-content: center; }
+    .btn-logout { width: 100%; justify-content: center; margin-top: 0.5rem; }
+    
+    .activity-header { padding: 1.25rem 1.5rem; }
+    .activity-item { padding: 1.25rem 1.5rem; }
 }

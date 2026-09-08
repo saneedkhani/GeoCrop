@@ -176,12 +176,20 @@ body, html {
 /* Crop filter words carry the actual color-to-crop meaning now (no dot),
    so they get a bit more weight and size than a plain menu item. */
 .crop-grid-item {
-    font-size: 0.98rem;
-    font-weight: 700;
+    font-size: 1.1rem;
+    font-weight: 800;
 }
 
-.menu-item.active, .crop-grid-item.active {
+.menu-item.active {
     background: rgba(34, 197, 94, 0.14);
+    color: #ffffff;
+}
+
+/* The active crop item is shown by its bold, larger text alone - no
+   highlight box behind it, so nothing competes with the crop's own
+   palette color. */
+.crop-grid-item.active {
+    background: transparent;
     color: #ffffff;
 }
 
@@ -489,20 +497,22 @@ body, html {
 }
 
 /* Top-Left Hover Card (sits below the floating toolbar; hidden by default).
-   Deliberately minimal: crop type (with its real palette color) + size only,
-   at a fixed box size so it never jumps around between fields/crops. */
+   Matches OneSoil's own click-on-polygon card exactly: crop type rendered
+   in its real palette color (text only, no dot), then a muted "Size, unit"
+   label, then the bare number in large bold white - at a fixed box size so
+   it never jumps around between fields/crops. */
 .map-top-left-hud {
     position: absolute;
     top: 84px;
     left: 20px;
     z-index: 1000;
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(8px);
-    padding: 12px 18px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    /* No card/background - the crop name and size float directly over the
+       map, exactly like OneSoil's own hover readout. */
+    background: transparent;
+    padding: 0;
     pointer-events: none;
-    width: 170px;
+    min-width: 170px;
+    width: max-content;
 
     /* HIDE BY DEFAULT */
     opacity: 0;
@@ -517,29 +527,41 @@ body, html {
 }
 
 .hud-crop-name {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1.15rem;
+    font-size: 1.95rem;
     font-weight: 900;
     color: #ffffff;
     line-height: 1.1;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    white-space: nowrap;
+    text-shadow:
+        2px 3px 2px #000000,
+        0 0 6px #000000,
+        0 0 14px rgba(0, 0, 0, 0.95),
+        0 0 26px rgba(0, 0, 0, 0.85);
 }
 
-.hud-crop-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+.hud-size-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1;
+    margin-bottom: 4px;
+    text-shadow:
+        1px 2px 2px #000000,
+        0 0 5px #000000,
+        0 0 12px rgba(0, 0, 0, 0.9);
 }
 
 .hud-size-val {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     font-weight: 900;
     color: #ffffff;
     line-height: 1;
+    text-shadow:
+        2px 3px 2px #000000,
+        0 0 6px #000000,
+        0 0 14px rgba(0, 0, 0, 0.95),
+        0 0 26px rgba(0, 0, 0, 0.85);
 }
 
 /* ---------- Loading / Empty overlays ---------- */

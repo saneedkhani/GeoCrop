@@ -193,14 +193,13 @@
             </div>
 
             <!-- Top-Left Crop & Area Highlight Card (below the floating toolbar) -->
-            <!-- Deliberately minimal: only the crop type (with its real palette color)
-                 and the field's size — kept a consistent box size across every crop
-                 so hovering different fields doesn't jump the layout around. -->
+            <!-- Matches OneSoil's own click-on-polygon card: the crop name itself
+                 rendered in its real palette color (no dot), a muted "Size, unit"
+                 label, then the bare number in large bold white - fixed box size
+                 so it never jumps around between fields/crops. -->
             <div class="map-top-left-hud" id="map-hud">
-                <div class="hud-crop-name" id="hud-crop-name">
-                    <span class="hud-crop-dot" id="hud-crop-dot"></span>
-                    <span id="hud-crop-label">Hover a field</span>
-                </div>
+                <div class="hud-crop-name" id="hud-crop-label">Hover a field</div>
+                <div class="hud-size-label" id="hud-size-label">Size, ac</div>
                 <div class="hud-size-val" id="hud-size-val">&ndash;</div>
             </div>
 
@@ -278,8 +277,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // 2. DOM refs
     // ---------------------------------------------------------------
     const mapHud = document.getElementById('map-hud');
-    const hudCropDot = document.getElementById('hud-crop-dot');
     const hudCropLabel = document.getElementById('hud-crop-label');
+    const hudSizeLabel = document.getElementById('hud-size-label');
     const hudSizeVal = document.getElementById('hud-size-val');
     const loadingOverlay = document.getElementById('map-loading');
     const emptyOverlay = document.getElementById('map-empty');
@@ -363,13 +362,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showHud(props) {
-        // Crop type gets its exact palette color as a dot, so the HUD always
-        // matches the field's fill color on the map (e.g. Corn's dot is the
-        // same yellow as a Corn field) - size is the only other value shown,
-        // and the card's dimensions stay fixed regardless of crop name length.
-        hudCropDot.style.background = props.color || CROP_COLORS[props.crop_type] || '#94a3b8';
+        // Matches OneSoil's own click-on-polygon card exactly: the crop name
+        // itself is rendered in its real palette color (no dot), a muted
+        // "Size, unit" label sits below it, then the bare number in large
+        // bold white - the card's dimensions stay fixed regardless of crop
+        // name length.
+        var cropColor = props.color || CROP_COLORS[props.crop_type] || '#94a3b8';
         hudCropLabel.textContent = props.crop_type;
-        hudSizeVal.textContent = formatArea(props.area);
+        hudCropLabel.style.color = cropColor;
+        hudSizeLabel.textContent = 'Size, ' + (unit === 'ha' ? 'ha' : 'ac');
+        hudSizeVal.textContent = toDisplayUnit(props.area).toLocaleString(undefined, { maximumFractionDigits: 1 });
         mapHud.classList.add('visible');
     }
 
@@ -377,6 +379,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (pinned) return;
         mapHud.classList.remove('visible');
     }
+
+    // Clicking a field pins the HUD open (so it survives mouseout while you
+    // inspect it); clicking anywhere else - empty map, water, another basemap
+    // tile - unpins it again, restoring plain hover behaviour.
+    function unpinHud() {
+        pinned = null;
+        mapHud.classList.remove('visible');
+    }
+    map.on('click', unpinHud);
 
     function renderRanking(cropBreakdown) {
         rankingBody.innerHTML = '';
@@ -475,7 +486,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                     geoJsonLayer.resetStyle(e.target);
                                     clearHud();
                                 },
-                                click: function () {
+                                click: function (e) {
+                                    // Stop this click reaching the map's own
+                                    // click handler below, so pinning a field
+                                    // doesn't immediately unpin itself.
+                                    L.DomEvent.stopPropagation(e);
                                     pinned = feature;
                                     showHud(feature.properties);
                                 }

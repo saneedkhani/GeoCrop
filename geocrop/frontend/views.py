@@ -11,6 +11,9 @@ from . import data
 def home_view(request):
     return render(request, "frontend/home.html")
 
+def company_view(request):
+    return render(request, "frontend/company.html")
+
 def upload_view(request):
     if request.method == "POST":
         uploaded_file = request.FILES.get("satellite_image")

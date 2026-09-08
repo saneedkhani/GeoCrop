@@ -96,34 +96,50 @@
         </div>
     </div>
 
-    <!-- Enhanced Data Table -->
-    <div class="breakdown-panel">
-        <div class="panel-header">
-            <h2>Detailed Crop Breakdown</h2>
-            <span class="panel-subtitle">Distribution by area and yield</span>
+    <!-- Distribution chart + Detailed table, side by side -->
+    <div class="dashboard-columns">
+        <div class="chart-panel">
+            <div class="panel-header">
+                <h2>Crop Distribution</h2>
+                <span class="panel-subtitle">Share of total analyzed area</span>
+            </div>
+            <div class="chart-body" id="crop-chart">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <span>Fetching latest data...</span>
+                </div>
+            </div>
         </div>
-        <div class="table-responsive">
-            <table class="breakdown-table">
-                <thead>
-                    <tr>
-                        <th>Crop Classification</th>
-                        <th class="align-right">Area (Acres)</th>
-                        <th class="align-right">Avg. Yield (bu/ac)</th>
-                        <th class="align-right">% of Total Area</th>
-                    </tr>
-                </thead>
-                <tbody id="breakdown-body">
-                    <!-- Professional Loading State -->
-                    <tr class="no-data-row">
-                        <td colspan="4">
-                            <div class="loading-state">
-                                <div class="spinner"></div>
-                                <span>Fetching latest data...</span>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+
+        <!-- Enhanced Data Table -->
+        <div class="breakdown-panel">
+            <div class="panel-header">
+                <h2>Detailed Crop Breakdown</h2>
+                <span class="panel-subtitle">Distribution by area and yield</span>
+            </div>
+            <div class="table-responsive">
+                <table class="breakdown-table">
+                    <thead>
+                        <tr>
+                            <th>Crop Classification</th>
+                            <th class="align-right">Area (Acres)</th>
+                            <th class="align-right">Avg. Yield (bu/ac)</th>
+                            <th class="align-right">% of Total Area</th>
+                        </tr>
+                    </thead>
+                    <tbody id="breakdown-body">
+                        <!-- Professional Loading State -->
+                        <tr class="no-data-row">
+                            <td colspan="4">
+                                <div class="loading-state">
+                                    <div class="spinner"></div>
+                                    <span>Fetching latest data...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

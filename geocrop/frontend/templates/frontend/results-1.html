@@ -1,0 +1,643 @@
+{% extends "frontend/base.html" %}
+{% block title %}GeoCrop | Live Field & Crop Intelligence{% endblock %}
+{% block main_class %}app-shell{% endblock %}
+
+{% load static %}
+{% block extra_head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<link rel="stylesheet" href="{% static 'frontend/css/results.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="map-workspace">
+    <!-- Side Panel & Map Container -->
+    <div class="map-body">
+        <!-- Left Sidebar (light-themed, OneSoil-style header stack) -->
+        <aside class="map-sidebar">
+            <div class="sidebar-header">
+                <a href="{% url 'frontend:home' %}" class="sidebar-brand">
+                    <svg width="20" height="20" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 21.5L11 3.5H15L23 21.5" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+                        <path d="M7.5 14.5H18.5" stroke="currentColor" stroke-width="2.5"/>
+                    </svg>
+                    GeoCrop
+                </a>
+                <a href="{% url 'frontend:home' %}#section-how" class="sidebar-how">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 11-14h-7l1-6z"/></svg>
+                    How it works
+                </a>
+            </div>
+
+            <div class="sidebar-year-row">
+                <span class="sidebar-eyebrow">Data for the year</span>
+                <div class="year-links">
+                    <span class="year-link muted" title="Historical data is on our roadmap">2024</span>
+                    <span class="year-link muted" title="Historical data is on our roadmap">2025</span>
+                    <span class="year-link active">2026</span>
+                </div>
+            </div>
+
+            <div class="sidebar-scope">
+                <span class="scope-row-label">in</span>
+                <select class="scope-link scope-link-lg" id="country-selector">
+                    {% for c in countries %}
+                    <option value="{{ c }}">{% if c == "USA" %}🇺🇸{% endif %} {{ c }}</option>
+                    {% endfor %}
+                    <option disabled>&mdash; more countries &mdash;</option>
+                    <option disabled>🇧🇷 Brazil (coming soon)</option>
+                    <option disabled>🇮🇳 India (coming soon)</option>
+                    <option disabled>🇺🇦 Ukraine (coming soon)</option>
+                </select>
+            </div>
+            <div class="sidebar-scope">
+                <span class="scope-row-label">in</span>
+                <select class="scope-link" id="state-selector">
+                    <option value="">Select state</option>
+                    {% for s in states %}
+                    <option value="{{ s }}">{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="sidebar-scope">
+                <span class="scope-row-label">Unit</span>
+                <select class="scope-link" id="unit-selector">
+                    <option value="acres">acres</option>
+                    <option value="ha">ha</option>
+                </select>
+            </div>
+
+            <div class="sidebar-livestrip">
+                <span class="live-dot"></span>
+                <span id="live-field-count">&mdash;</span> fields &middot;
+                <span id="live-total-area">&mdash;</span> ac analyzed
+            </div>
+
+            <div class="sidebar-divider"></div>
+
+            <!-- Regional Crop Ranking Summary (computed live from the filtered fields) -->
+            <div class="ranking-panel">
+                <h4>Crop ranking in view</h4>
+                <table class="crop-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Crop</th>
+                            <th class="text-right">Size</th>
+                        </tr>
+                    </thead>
+                    <tbody id="crop-ranking-body">
+                        <tr><td colspan="3" class="table-loading">Loading&hellip;</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Field list: real, clickable records from the backend dataset -->
+            <div class="field-list-panel">
+                <div class="field-list-head">
+                    <h4>Fields <span id="field-list-count">(0)</span></h4>
+                </div>
+                <input type="search" id="field-search" class="field-search" placeholder="Search field name&hellip;">
+                <ul class="field-list" id="field-list"></ul>
+            </div>
+        </aside>
+
+        <!-- Leaflet Map Canvas -->
+        <main class="map-viewport" id="map-container">
+            <!-- Floating filter toolbar, over the map (OneSoil-style) rather than a
+                 full-width bar, so the map itself reads as the main surface. -->
+            <div class="floating-toolbar">
+                <!-- 1. Map Layer / Basemap Selector -->
+                <div class="dropdown-wrapper">
+                    <button class="toolbar-btn" id="layer-dropdown-btn">
+                        <span class="btn-label">Map layer</span>
+                        <span class="btn-value" id="current-layer-name">Boundaries and crops</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="dropdown-menu" id="layer-menu">
+                        <div class="menu-header">Boundaries and crops</div>
+                        <button class="menu-item active" data-layer="crops">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Boundaries &amp; Crop Types
+                        </button>
+                        <button class="menu-item locked-item" data-modal="ndvi">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            NDVI Vegetation Index
+                            <span class="soon-badge">Roadmap</span>
+                        </button>
+                        <button class="menu-item locked-item" data-modal="cloud_free">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            Cloud-free Composite
+                            <span class="soon-badge">Roadmap</span>
+                        </button>
+                        <button class="menu-item locked-item" data-modal="field_score">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            Field Productivity Score
+                            <span class="soon-badge">Roadmap</span>
+                        </button>
+                        <div class="menu-header">Basemap</div>
+                        <button class="menu-item basemap-item active" data-basemap="satellite">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                            Satellite imagery
+                        </button>
+                        <button class="menu-item basemap-item" data-basemap="streets">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon></svg>
+                            Street map
+                        </button>
+                    </div>
+                </div>
+
+                <span class="toolbar-divider"></span>
+
+                <!-- 2. Crop Type Filter (built from the real, shared crop palette) -->
+                <div class="dropdown-wrapper">
+                    <button class="toolbar-btn" id="crop-dropdown-btn">
+                        <span class="btn-label">Filter</span>
+                        <span class="btn-value" id="current-crop-name">All crops</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="dropdown-menu mega-grid" id="crop-menu">
+                        <button class="crop-grid-item active" data-crop="">
+                            <span class="crop-dot" style="background: #ffffff;"></span> All crops
+                        </button>
+                        {% for ct in crop_types %}
+                        <button class="crop-grid-item" data-crop="{{ ct }}">
+                            <span class="crop-dot" data-crop-dot="{{ ct }}"></span> {{ ct }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <span class="toolbar-divider"></span>
+
+                <!-- 3. Year Selector -->
+                <div class="dropdown-wrapper">
+                    <button class="toolbar-btn" id="year-dropdown-btn">
+                        <span class="btn-label">Year</span>
+                        <span class="btn-value">2026 <span class="live-pill">Live</span></span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="dropdown-menu compact" id="year-menu">
+                        <button class="menu-item active" data-year="2026">2026 &middot; current season</button>
+                        <button class="menu-item locked-item" data-modal="historical_2025">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            2025 <span class="soon-badge">Roadmap</span>
+                        </button>
+                        <button class="menu-item locked-item" data-modal="historical_2024">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            2024 <span class="soon-badge">Roadmap</span>
+                        </button>
+                    </div>
+                </div>
+
+                <span class="toolbar-divider"></span>
+
+                <!-- 4. Season Selector -->
+                <div class="dropdown-wrapper">
+                    <button class="toolbar-btn" id="season-dropdown-btn">
+                        <span class="btn-label">Season</span>
+                        <span class="btn-value">Season 1</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="dropdown-menu compact" id="season-menu">
+                        <button class="menu-item active" data-season="Season 1">Season 1</button>
+                        <button class="menu-item locked-item" data-modal="season_2">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            Season 2 <span class="soon-badge">Roadmap</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top-Left Crop & Area Highlight Card (below the floating toolbar) -->
+            <div class="map-top-left-hud" id="map-hud">
+                <div class="hud-field-name" id="hud-field-name">&nbsp;</div>
+                <div class="hud-crop-name" id="hud-crop-name">Hover or click a field</div>
+                <div class="hud-row">
+                    <div>
+                        <div class="hud-size-label" id="hud-size-label">Size, ac</div>
+                        <div class="hud-size-val" id="hud-size-val">&ndash;</div>
+                    </div>
+                    <div>
+                        <div class="hud-size-label">Est. yield</div>
+                        <div class="hud-size-val" id="hud-yield-val">&ndash;</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Crop color legend, sourced from the same palette used across the app -->
+            <div class="map-legend" id="map-legend">
+                <div class="legend-title">Crop legend</div>
+                <div class="legend-items" id="legend-items"></div>
+            </div>
+
+            <!-- Loading / empty states -->
+            <div class="map-state-overlay" id="map-loading">
+                <div class="map-spinner"></div>
+                <span>Loading field data&hellip;</span>
+            </div>
+            <div class="map-state-overlay hidden" id="map-empty">
+                <span>No fields match the current filters. Try clearing the state or crop filter.</span>
+            </div>
+
+            <div id="map"></div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal Dialog -->
+<div class="modal-backdrop hidden" id="lead-modal">
+    <div class="modal-card">
+        <button class="modal-close-btn" id="modal-close">&times;</button>
+        <div class="modal-header">
+            <h3>Request Field Report</h3>
+            <p>This capability is on our roadmap. Leave your email and we'll notify you when historical &amp; NDVI layers ship.</p>
+        </div>
+        <form class="modal-form" onsubmit="event.preventDefault(); alert('Request sent! Our team will contact you.');">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" placeholder="name@farm.com" required>
+            </div>
+            <button type="submit" class="modal-submit-btn">Notify Me</button>
+        </form>
+    </div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- State boundary outlines, used only to highlight the selected state filter -->
+<script src="{% static 'frontend/js/us_states_boundaries.js' %}"></script>
+{{ crop_colors|json_script:"crop-colors-data" }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const CROP_COLORS = JSON.parse(document.getElementById('crop-colors-data').textContent);
+    const FIELD_DATA_URL = "{% url 'frontend:field_data' %}";
+    const ACRES_PER_HA = 2.47105;
+
+    // Color the crop-filter dots from the same palette used everywhere else in the app.
+    document.querySelectorAll('[data-crop-dot]').forEach(function (dot) {
+        dot.style.background = CROP_COLORS[dot.getAttribute('data-crop-dot')] || '#94a3b8';
+    });
+
+    // ---------------------------------------------------------------
+    // 1. Map + basemaps
+    // ---------------------------------------------------------------
+    const map = L.map('map', {
+        center: [39.8, -95.5],
+        zoom: 5,
+        zoomControl: false
+    });
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.control.scale({ position: 'bottomleft', imperial: true, metric: true }).addTo(map);
+
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Esri Satellite',
+        maxZoom: 18
+    });
+    const streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+    });
+    satelliteLayer.addTo(map);
+
+    // Basemap choice now lives inside the "Map layer" dropdown, as its own
+    // active-item group (separate from the Boundaries/NDVI/Cloud-free group).
+    document.querySelectorAll('.basemap-item').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            document.querySelectorAll('.basemap-item').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            if (btn.dataset.basemap === 'satellite') {
+                map.removeLayer(streetsLayer);
+                satelliteLayer.addTo(map);
+            } else {
+                map.removeLayer(satelliteLayer);
+                streetsLayer.addTo(map);
+            }
+        });
+    });
+
+    // ---------------------------------------------------------------
+    // 2. DOM refs
+    // ---------------------------------------------------------------
+    const mapHud = document.getElementById('map-hud');
+    const hudFieldName = document.getElementById('hud-field-name');
+    const hudCropName = document.getElementById('hud-crop-name');
+    const hudSizeLabel = document.getElementById('hud-size-label');
+    const hudSizeVal = document.getElementById('hud-size-val');
+    const hudYieldVal = document.getElementById('hud-yield-val');
+    const loadingOverlay = document.getElementById('map-loading');
+    const emptyOverlay = document.getElementById('map-empty');
+    const rankingBody = document.getElementById('crop-ranking-body');
+    const fieldListEl = document.getElementById('field-list');
+    const fieldListCount = document.getElementById('field-list-count');
+    const fieldSearch = document.getElementById('field-search');
+    const liveFieldCount = document.getElementById('live-field-count');
+    const liveTotalArea = document.getElementById('live-total-area');
+    const legendItems = document.getElementById('legend-items');
+    const unitSelector = document.getElementById('unit-selector');
+
+    let unit = 'acres'; // native storage unit in the dataset
+    let currentFeatures = [];
+    let geoJsonLayer = null;
+    let stateHighlightLayer = null;
+    let pinned = null;
+
+    // ---------------------------------------------------------------
+    // State highlight: when the user filters by state, THAT is what
+    // gets visually highlighted on the map (a distinct outline), not
+    // the crop-type fill — crop coloring stays on the field polygons
+    // for its own purpose (telling crops apart), so the two never
+    // fight for the same visual signal.
+    // ---------------------------------------------------------------
+    function highlightState(stateName) {
+        if (stateHighlightLayer) {
+            map.removeLayer(stateHighlightLayer);
+            stateHighlightLayer = null;
+        }
+        if (!stateName || typeof US_STATES_GEOJSON === 'undefined') return null;
+
+        const feature = US_STATES_GEOJSON.features.find(function (f) {
+            return f.properties.name === stateName;
+        });
+        if (!feature) return null;
+
+        stateHighlightLayer = L.geoJSON(feature, {
+            style: {
+                fillColor: '#38bdf8',
+                fillOpacity: 0.06,
+                color: '#38bdf8',
+                weight: 3,
+                dashArray: '8 6'
+            },
+            interactive: false
+        }).addTo(map);
+        stateHighlightLayer.bringToBack();
+        return stateHighlightLayer;
+    }
+
+    function toDisplayUnit(acres) {
+        return unit === 'ha' ? acres * (1 / ACRES_PER_HA) : acres;
+    }
+    function formatArea(acres) {
+        return toDisplayUnit(acres).toLocaleString(undefined, { maximumFractionDigits: 1 }) + ' ' + (unit === 'ha' ? 'ha' : 'ac');
+    }
+
+    // ---------------------------------------------------------------
+    // 3. Legend (built once from the shared crop palette)
+    // ---------------------------------------------------------------
+    (function renderLegend() {
+        legendItems.innerHTML = '';
+        Object.keys(CROP_COLORS).forEach(function (crop) {
+            const row = document.createElement('div');
+            row.className = 'legend-row';
+            row.innerHTML = '<span class="crop-dot" style="background:' + CROP_COLORS[crop] + '"></span>' + crop;
+            legendItems.appendChild(row);
+        });
+    })();
+
+    // ---------------------------------------------------------------
+    // 4. Fetch + render field data from the real backend endpoint
+    // ---------------------------------------------------------------
+    function fieldStyle(feature) {
+        return {
+            fillColor: feature.properties.color || CROP_COLORS[feature.properties.crop_type] || '#94a3b8',
+            weight: 1.5,
+            opacity: 1,
+            color: '#ffffff',
+            fillOpacity: 0.62
+        };
+    }
+
+    function showHud(props) {
+        hudFieldName.textContent = props.name;
+        hudCropName.textContent = props.crop_type + ' · ' + props.state;
+        hudSizeLabel.textContent = 'Size, ' + (unit === 'ha' ? 'ha' : 'ac');
+        hudSizeVal.textContent = formatArea(props.area);
+        hudYieldVal.textContent = props.yield.toLocaleString() + ' /ac';
+        mapHud.classList.add('visible');
+    }
+
+    function clearHud() {
+        if (pinned) return;
+        mapHud.classList.remove('visible');
+    }
+
+    function renderRanking(cropBreakdown) {
+        rankingBody.innerHTML = '';
+        if (!cropBreakdown.length) {
+            rankingBody.innerHTML = '<tr><td colspan="3" class="table-loading">No data</td></tr>';
+            return;
+        }
+        cropBreakdown.forEach(function (row, i) {
+            const color = CROP_COLORS[row.crop_type] || '#94a3b8';
+            const tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td>' + (i + 1) + '</td>' +
+                '<td><span class="crop-dot" style="background:' + color + '"></span>' + row.crop_type + '</td>' +
+                '<td class="text-right">' + formatArea(row.area) + '</td>';
+            rankingBody.appendChild(tr);
+        });
+    }
+
+    function renderFieldList(features) {
+        const query = (fieldSearch.value || '').toLowerCase();
+        fieldListEl.innerHTML = '';
+        const visible = features.filter(function (f) {
+            return f.properties.name.toLowerCase().indexOf(query) !== -1;
+        });
+        fieldListCount.textContent = '(' + visible.length + ')';
+
+        if (!visible.length) {
+            fieldListEl.innerHTML = '<li class="field-list-empty">No fields match.</li>';
+            return;
+        }
+
+        visible.forEach(function (f) {
+            const props = f.properties;
+            const li = document.createElement('li');
+            li.className = 'field-list-item';
+            li.innerHTML =
+                '<span class="crop-dot" style="background:' + (props.color || '#94a3b8') + '"></span>' +
+                '<span class="field-list-name">' + props.name + '</span>' +
+                '<span class="field-list-meta">' + formatArea(props.area) + '</span>';
+            li.addEventListener('click', function () {
+                flyToFeature(f);
+            });
+            fieldListEl.appendChild(li);
+        });
+    }
+
+    function flyToFeature(feature) {
+        if (!geoJsonLayer) return;
+        geoJsonLayer.eachLayer(function (layer) {
+            if (layer.feature.properties.id === feature.properties.id) {
+                map.flyToBounds(layer.getBounds(), { maxZoom: 12, duration: 0.6 });
+                pinned = feature;
+                showHud(feature.properties);
+                layer.setStyle({ fillOpacity: 0.9, weight: 3 });
+                setTimeout(function () { geoJsonLayer.resetStyle(layer); }, 1600);
+            }
+        });
+    }
+
+    function loadFields() {
+        loadingOverlay.classList.remove('hidden');
+        emptyOverlay.classList.add('hidden');
+
+        const params = new URLSearchParams();
+        const country = document.getElementById('country-selector').value;
+        const state = document.getElementById('state-selector').value;
+        const crop = activeCropFilter;
+        if (country) params.set('country', country);
+        if (state) params.set('state', state);
+        if (crop) params.set('crop_type', crop);
+
+        fetch(FIELD_DATA_URL + '?' + params.toString())
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                loadingOverlay.classList.add('hidden');
+
+                if (geoJsonLayer) map.removeLayer(geoJsonLayer);
+                currentFeatures = data.geojson.features;
+                pinned = null;
+
+                const stateOutline = highlightState(state);
+
+                if (!currentFeatures.length) {
+                    emptyOverlay.classList.remove('hidden');
+                    if (stateOutline) map.fitBounds(stateOutline.getBounds().pad(0.08));
+                } else {
+                    geoJsonLayer = L.geoJSON(data.geojson, {
+                        style: fieldStyle,
+                        onEachFeature: function (feature, layer) {
+                            layer.on({
+                                mouseover: function (e) {
+                                    e.target.setStyle({ fillOpacity: 0.9, weight: 3, color: '#ffffff' });
+                                    showHud(feature.properties);
+                                },
+                                mouseout: function (e) {
+                                    geoJsonLayer.resetStyle(e.target);
+                                    clearHud();
+                                },
+                                click: function () {
+                                    pinned = feature;
+                                    showHud(feature.properties);
+                                }
+                            });
+                        }
+                    }).addTo(map);
+
+                    // A selected state gets priority for framing the view (shows the
+                    // whole state, not just a tight crop around its 1-2 sample fields);
+                    // otherwise fit to whatever fields are in view.
+                    if (stateOutline) {
+                        map.fitBounds(stateOutline.getBounds().pad(0.08));
+                    } else {
+                        map.fitBounds(geoJsonLayer.getBounds().pad(0.35), { maxZoom: 8 });
+                    }
+                }
+
+                renderRanking(data.stats.crop_breakdown);
+                renderFieldList(currentFeatures);
+                liveFieldCount.textContent = data.stats.total_fields;
+                liveTotalArea.textContent = toDisplayUnit(data.stats.total_area).toLocaleString(undefined, { maximumFractionDigits: 0 });
+            })
+            .catch(function (err) {
+                loadingOverlay.classList.add('hidden');
+                console.error('Failed to load field data:', err);
+            });
+    }
+
+    // ---------------------------------------------------------------
+    // 5. Toolbar dropdowns
+    // ---------------------------------------------------------------
+    function setupDropdown(btnId, menuId) {
+        const btn = document.getElementById(btnId);
+        const menu = document.getElementById(menuId);
+        if (!btn || !menu) return;
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            document.querySelectorAll('.dropdown-menu').forEach(function (m) { if (m !== menu) m.classList.remove('open'); });
+            menu.classList.toggle('open');
+        });
+    }
+    setupDropdown('layer-dropdown-btn', 'layer-menu');
+    setupDropdown('crop-dropdown-btn', 'crop-menu');
+    setupDropdown('year-dropdown-btn', 'year-menu');
+    setupDropdown('season-dropdown-btn', 'season-menu');
+    document.addEventListener('click', function () {
+        document.querySelectorAll('.dropdown-menu').forEach(function (m) { m.classList.remove('open'); });
+    });
+
+    // 6. Crop filter (real, backend-driven)
+    let activeCropFilter = '';
+    document.querySelectorAll('#crop-menu .crop-grid-item').forEach(function (item) {
+        item.addEventListener('click', function (e) {
+            e.stopPropagation();
+            document.querySelectorAll('#crop-menu .crop-grid-item').forEach(function (i) { i.classList.remove('active'); });
+            this.classList.add('active');
+            activeCropFilter = this.getAttribute('data-crop');
+            document.getElementById('current-crop-name').textContent = this.textContent.trim();
+            document.getElementById('crop-menu').classList.remove('open');
+            loadFields();
+        });
+    });
+
+    // 7. Map layer selector (only the real overlay item is selectable; basemap
+    // items are handled by their own group above)
+    document.querySelectorAll('#layer-menu .menu-item:not(.locked-item):not(.basemap-item)').forEach(function (item) {
+        item.addEventListener('click', function (e) {
+            e.stopPropagation();
+            document.querySelectorAll('#layer-menu .menu-item:not(.basemap-item)').forEach(function (i) { i.classList.remove('active'); });
+            this.classList.add('active');
+            document.getElementById('current-layer-name').textContent = this.textContent.trim();
+            document.getElementById('layer-menu').classList.remove('open');
+        });
+    });
+
+    // 8. Country / state selectors -> real refetch
+    document.getElementById('country-selector').addEventListener('change', loadFields);
+    document.getElementById('state-selector').addEventListener('change', loadFields);
+
+    // Field search
+    fieldSearch.addEventListener('input', function () { renderFieldList(currentFeatures); });
+
+    // 9. Unit selector -> re-renders every displayed number
+    unitSelector.addEventListener('change', function () {
+        unit = unitSelector.value;
+        fetch(FIELD_DATA_URL + '?' + (function () {
+            const p = new URLSearchParams();
+            const country = document.getElementById('country-selector').value;
+            const state = document.getElementById('state-selector').value;
+            if (country) p.set('country', country);
+            if (state) p.set('state', state);
+            if (activeCropFilter) p.set('crop_type', activeCropFilter);
+            return p.toString();
+        })())
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                renderRanking(data.stats.crop_breakdown);
+                renderFieldList(currentFeatures);
+                liveTotalArea.textContent = toDisplayUnit(data.stats.total_area).toLocaleString(undefined, { maximumFractionDigits: 0 });
+            });
+    });
+
+    // 10. Lead / roadmap modal
+    const modal = document.getElementById('lead-modal');
+    const modalClose = document.getElementById('modal-close');
+    document.querySelectorAll('.locked-item').forEach(function (elem) {
+        elem.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (modal) modal.classList.remove('hidden');
+        });
+    });
+    if (modalClose) {
+        modalClose.addEventListener('click', function () { modal.classList.add('hidden'); });
+    }
+
+    // Initial load
+    loadFields();
+});
+</script>
+{% endblock %}

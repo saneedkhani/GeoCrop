@@ -22,6 +22,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    {% if request.resolver_match.url_name != 'results' %}
     <header class="site-header">
         <div class="header-inner">
             <!-- Brand Logo -->
@@ -37,8 +38,8 @@
             <nav class="primary-nav">
                 <a href="{% url 'frontend:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a>
                 <a href="{% url 'frontend:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
-                <a href="{% url 'frontend:results' %}" class="{% if request.resolver_match.url_name == 'results' %}active{% endif %}">Live Map</a>
-                <a href="#about" class="nav-link-secondary">About Us</a>
+                <a href="{% url 'frontend:results' %}" target="_blank" rel="noopener" class="{% if request.resolver_match.url_name == 'results' %}active{% endif %}">Live Map</a>
+                <a href="{% url 'frontend:home' %}#about" class="nav-link-secondary">About Us</a>
             </nav>
 
             <!-- Authentication Actions -->
@@ -63,7 +64,8 @@
         <nav class="primary-nav-mobile" id="nav-mobile">
             <a href="{% url 'frontend:home' %}">Home</a>
             <a href="{% url 'frontend:dashboard' %}">Dashboard</a>
-            <a href="{% url 'frontend:results' %}">Live Map</a>
+            <a href="{% url 'frontend:results' %}" target="_blank" rel="noopener">Live Map</a>
+            <a href="{% url 'frontend:home' %}#about">About Us</a>
             {% if request.user.is_authenticated %}
             <a href="{% url 'frontend:profile' %}">Profile</a>
             <a href="{% url 'frontend:logout' %}">Log out</a>
@@ -73,12 +75,14 @@
             {% endif %}
         </nav>
     </header>
+    {% endif %}
 
-    <main>
+    <main class="{% block main_class %}{% endblock %}">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Professional Business Footer -->
+    {% if request.resolver_match.url_name != 'results' %}
     <footer class="site-footer">
         <div class="footer-inner">
             <div class="footer-grid">
@@ -98,16 +102,16 @@
                 <div class="footer-col">
                     <h4>Platform</h4>
                     <a href="{% url 'frontend:dashboard' %}">Analytics Dashboard</a>
-                    <a href="{% url 'frontend:results' %}">Interactive Live Map</a>
+                    <a href="{% url 'frontend:results' %}" target="_blank" rel="noopener">Interactive Live Map</a>
                     <a href="#">Pricing & Plans</a>
                 </div>
 
                 <!-- Company Column -->
                 <div class="footer-col">
                     <h4>Company</h4>
-                    <a href="#">About Us</a>
-                    <a href="#">Contact Support</a>
-                    <a href="#">Privacy Policy</a>
+                    <a href="{% url 'frontend:home' %}#about">About Us</a>
+                    <a href="{% url 'frontend:company' %}">Our Story</a>
+                    <a href="{% url 'frontend:signup' %}">Get Started</a>
                 </div>
             </div>
             
@@ -121,6 +125,7 @@
             </div>
         </div>
     </footer>
+    {% endif %}
 
     <!-- Mobile Navigation Script -->
     <script>

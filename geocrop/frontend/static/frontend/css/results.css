@@ -1,299 +1,576 @@
-/* ---------- Live Map Enterprise Styles ---------- */
-
-/* App Header & Controls (Mirrored from Dashboard for consistency) */
-.app-header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--line);
-    padding: 1.5rem 0;
-    margin-bottom: 1.5rem;
+:root {
+    /* Tied to the brand's forest-navy palette (see base.css --void tokens)
+       instead of a generic slate, so the map app reads as the same product
+       as the marketing site. base.css's light tokens (--surface, --ink,
+       --line, --field, etc.) are also available here since base.css loads
+       first — used for the light sidebar below. */
+    --bg-dark: #081310;
+    --panel-dark: #0f251d;
+    --border-dark: #1e3d30;
+    --text-light: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent-green: #22c55e;
+    --accent-green-hover: #16a34a;
 }
 
-.header-content {
-    max-width: 1440px; /* Wider for map view */
-    margin: 0 auto;
-    padding: 0 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 2rem;
-    flex-wrap: wrap;
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    font-family: 'Manrope', 'Inter', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
 }
 
-.header-content h1 {
-    font-size: 1.5rem;
-    margin-bottom: 0.25rem;
-}
-
-.header-content p {
-    color: var(--ink-soft);
-    font-size: 0.9rem;
-}
-
-.app-controls {
-    display: flex;
-    align-items: flex-end;
-    gap: 1rem;
-}
-
-.filter-group {
-    display: flex;
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    padding: 0.4rem;
-    gap: 0.5rem;
-}
-
-.filter-field {
+.map-workspace {
     display: flex;
     flex-direction: column;
-    min-width: 140px;
-}
-
-.filter-field label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--ink-faint);
-    margin-bottom: 0.2rem;
-    padding-left: 0.5rem;
-}
-
-.select-wrapper { position: relative; }
-.select-wrapper::after {
-    content: "▼";
-    font-size: 0.55rem;
-    color: var(--ink-soft);
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-}
-
-.filter-field select {
+    height: 100%;
     width: 100%;
-    appearance: none;
-    padding: 0.5rem 1.75rem 0.5rem 0.5rem;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    font-family: inherit;
-    background: transparent;
-    color: var(--ink);
-    cursor: pointer;
-    transition: all 0.2s ease;
 }
 
-.filter-field select:hover { background: var(--surface); }
-.filter-field select:focus {
-    outline: none;
-    background: var(--surface);
-    border-color: var(--field);
-    box-shadow: 0 0 0 2px var(--field-soft);
-}
-
-.clear-btn {
+/* ---------- Floating filter toolbar (over the map, OneSoil-style) ---------- */
+.floating-toolbar {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.5rem 0.75rem;
-    color: var(--ink-faint);
-    background: transparent;
-    border: none;
-    cursor: pointer;
+    background: rgba(8, 19, 16, 0.92);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 0.55rem 0.7rem;
+    min-width: 460px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+}
+
+.toolbar-divider {
+    width: 1px;
+    align-self: stretch;
+    background: rgba(255, 255, 255, 0.12);
+    margin: 0.35rem 0.1rem;
+}
+
+.live-pill {
+    display: inline-block;
+    margin-left: 0.35rem;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--accent-green);
+    background: rgba(34, 197, 94, 0.14);
     border-radius: 4px;
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-.clear-btn:hover { color: var(--soil); background: #fff1f2; }
-
-/* Map Workspace */
-.map-workspace {
-    max-width: 1440px;
-    margin: 0 auto 3rem;
-    padding: 0 2rem;
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 200px);
-    min-height: 600px;
 }
 
-/* Metrics Strip (Replaces bulky cards) */
-.metrics-strip {
+.menu-item-value {
+    margin-left: auto;
+    font-weight: 800;
+    font-size: 0.78rem;
+    color: var(--text-light);
+}
+
+.dropdown-wrapper {
+    position: relative;
+}
+
+.toolbar-btn {
     display: flex;
     align-items: center;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-bottom: none;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-    padding: 1rem 2rem;
+    gap: 0.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    padding: 0.6rem 1.15rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
 }
 
-.metric-item {
+.toolbar-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.btn-label {
+    color: var(--text-muted);
+}
+
+.btn-value {
+    font-weight: 700;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: var(--panel-dark);
+    border: 1px solid var(--border-dark);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    padding: 0.4rem;
+    display: none;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 200px;
+    z-index: 1100;
+}
+
+.dropdown-menu.open {
+    display: flex;
+}
+
+.dropdown-menu.compact {
+    min-width: 240px;
+}
+
+.dropdown-menu.mega-grid {
+    display: none;
+    grid-template-columns: repeat(2, 1fr);
+    width: 320px;
+}
+
+.dropdown-menu.mega-grid.open {
+    display: grid;
+}
+
+.menu-header {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    padding: 0.5rem 0.6rem 0.3rem;
+}
+
+.menu-header:not(:first-child) {
+    margin-top: 0.3rem;
+    border-top: 1px solid var(--border-dark);
+    padding-top: 0.6rem;
+}
+
+.menu-item, .crop-grid-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-align: left;
+}
+
+.menu-item:hover, .crop-grid-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Crop filter words carry the actual color-to-crop meaning now (no dot),
+   so they get a bit more weight and size than a plain menu item. */
+.crop-grid-item {
+    font-size: 0.98rem;
+    font-weight: 700;
+}
+
+.menu-item.active, .crop-grid-item.active {
+    background: rgba(34, 197, 94, 0.14);
+    color: #ffffff;
+}
+
+.crop-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.btn-cta {
+    background: var(--accent-green);
+    color: #ffffff;
+    border: none;
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* ---------- Map Body Layout ---------- */
+.map-body {
+    display: flex;
+    flex: 1;
+    position: relative;
+}
+
+/* ================================================================
+   Left Sidebar — light-themed, modeled on OneSoil's map sidebar:
+   logo + "How it works", a "Data for the year" strip, a stack of
+   "in ___" scope links, then the analytics panels below.
+   ================================================================ */
+.map-sidebar {
+    width: 380px;
+    flex-shrink: 0;
+    background: var(--surface, #ffffff);
+    color: var(--ink, #0f172a);
+    border-right: 1px solid var(--line, #e2e8f0);
     display: flex;
     flex-direction: column;
-    flex: 1;
+    padding: 1.1rem;
+    gap: 0.9rem;
+    z-index: 900;
+    min-height: 0;
+    overflow: hidden;
 }
 
-.metric-label {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--ink-faint);
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-}
-
-.metric-value {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--ink);
+.sidebar-header {
     display: flex;
-    align-items: baseline;
-    gap: 0.25rem;
+    align-items: center;
+    justify-content: space-between;
 }
 
-.metric-value small {
+.sidebar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: var(--field, #1e6f47);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+}
+
+.sidebar-how {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--gold, #d97706);
+    text-decoration: none;
+}
+.sidebar-how:hover { text-decoration: underline; }
+
+.sidebar-year-row {
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--line, #e2e8f0);
+}
+
+.sidebar-eyebrow {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--ink-faint, #94a3b8);
+    margin-bottom: 0.35rem;
+}
+
+.year-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.year-link {
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--ink-soft);
+    color: var(--ink-faint, #94a3b8);
+    cursor: default;
 }
 
-.metric-divider {
-    width: 1px;
-    height: 32px;
-    background: var(--line);
-    margin: 0 2rem;
+.year-link.active {
+    color: var(--field, #1e6f47);
+    font-weight: 800;
+    text-decoration: underline;
 }
 
-/* Immersive Map Container */
-.map-container-wrapper {
-    position: relative;
+.sidebar-scope {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+}
+
+.scope-row-label {
+    font-size: 0.85rem;
+    color: var(--ink-soft, #475569);
+    flex-shrink: 0;
+}
+
+.scope-link {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: none;
+    color: var(--field, #1e6f47);
+    font-weight: 800;
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0.1rem 1.1rem 0.1rem 0.1rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231e6f47' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right center;
+}
+
+.scope-link-lg {
+    font-size: 1.05rem;
+}
+
+.sidebar-livestrip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--ink-soft, #475569);
+}
+
+.sidebar-livestrip span#live-field-count,
+.sidebar-livestrip span#live-total-area {
+    color: var(--ink, #0f172a);
+    font-weight: 700;
+}
+
+.live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+    flex-shrink: 0;
+    animation: live-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.sidebar-divider {
+    height: 1px;
+    background: var(--line, #e2e8f0);
+}
+
+/* Regional Crop Ranking Table */
+.ranking-panel h4 {
+    margin: 0 0 0.6rem 0;
+    font-size: 0.78rem;
+    color: var(--ink-faint, #94a3b8);
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.crop-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.crop-table th, .crop-table td {
+    padding: 0.4rem 0.2rem;
+    border-bottom: 1px solid var(--line, #e2e8f0);
+}
+
+.crop-table th {
+    color: var(--ink-faint, #94a3b8);
+    font-weight: 600;
+    text-align: left;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.table-loading {
+    color: var(--ink-faint, #94a3b8);
+    text-align: center;
+    padding: 0.75rem 0;
+}
+
+/* ---------- Field List Panel ---------- */
+.field-list-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 0;
     flex: 1;
-    border: 1px solid var(--line);
-    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.field-list-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+}
+
+.field-list-head h4 {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--ink-faint, #94a3b8);
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+#field-list-count {
+    font-size: 0.75rem;
+    color: var(--ink-faint, #94a3b8);
+}
+
+.field-search {
+    background: var(--paper, #f8fafc);
+    border: 1px solid var(--line, #e2e8f0);
+    color: var(--ink, #0f172a);
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+.field-search::placeholder { color: var(--ink-faint, #94a3b8); }
+
+.field-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    flex: 1;
+    min-height: 60px;
+}
+
+.field-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.4rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.field-list-item:hover { background: var(--paper, #f8fafc); }
+
+.field-list-name {
+    flex: 1;
+    color: var(--ink, #0f172a);
+    white-space: nowrap;
     overflow: hidden;
-    background: var(--paper); /* Fallback before map loads */
-    box-shadow: var(--shadow-sm);
+    text-overflow: ellipsis;
+}
+
+.field-list-meta {
+    color: var(--ink-faint, #94a3b8);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.field-list-empty {
+    color: var(--ink-faint, #94a3b8);
+    font-size: 0.78rem;
+    padding: 0.5rem 0.2rem;
+}
+
+/* ---------- Map Viewport & Top-Left HUD Overlay ---------- */
+.map-viewport {
+    flex: 1;
+    position: relative;
+    background: #000;
 }
 
 #map {
     width: 100%;
     height: 100%;
-    z-index: 1;
 }
 
-/* Floating Legend */
-.floating-legend {
+/* Top-Left Hover Card (sits below the floating toolbar; hidden by default).
+   Deliberately minimal: crop type (with its real palette color) + size only,
+   at a fixed box size so it never jumps around between fields/crops. */
+.map-top-left-hud {
     position: absolute;
-    bottom: 24px;
-    right: 24px;
+    top: 84px;
+    left: 20px;
     z-index: 1000;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(15, 23, 42, 0.85);
     backdrop-filter: blur(8px);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    padding: 1rem 1.25rem;
-    min-width: 180px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    padding: 12px 18px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    pointer-events: none;
+    width: 170px;
+
+    /* HIDE BY DEFAULT */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-.legend-title {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 800;
-    color: var(--ink);
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--line);
+/* SHOW WHEN HOVERED */
+.map-top-left-hud.visible {
+    opacity: 1;
+    visibility: visible;
 }
 
-.legend-item {
+.hud-crop-name {
     display: flex;
     align-items: center;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--ink-soft);
-    margin-bottom: 0.4rem;
+    gap: 0.5rem;
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: #ffffff;
+    line-height: 1.1;
+    margin-bottom: 8px;
 }
-.legend-item:last-child { margin-bottom: 0; }
 
-.legend-swatch {
-    display: inline-block;
+.hud-crop-dot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    margin-right: 0.6rem;
     flex-shrink: 0;
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
 }
 
-/* Styled Empty State */
-.no-results-overlay {
-    display: none; /* Controlled by JS */
+.hud-size-val {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #ffffff;
+    line-height: 1;
+}
+
+/* ---------- Loading / Empty overlays ---------- */
+.map-state-overlay {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1001;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    padding: 2rem 3rem;
-    text-align: center;
-    box-shadow: var(--shadow-md);
+    inset: 0;
+    z-index: 950;
+    display: flex;
     flex-direction: column;
     align-items: center;
-    color: var(--ink-soft);
-    font-weight: 500;
+    justify-content: center;
+    gap: 0.75rem;
+    background: rgba(8, 19, 16, 0.55);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 2rem;
+    pointer-events: none;
 }
 
-/* Premium Map Popups (Leaflet override targeting your specific structure) */
-.field-popup h4 {
-    margin: 0 0 0.75rem;
-    color: var(--ink);
-    font-size: 1rem;
-    font-weight: 800;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 0.5rem;
+.map-spinner {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    border-top-color: var(--accent-green);
+    animation: spin 0.8s linear infinite;
 }
 
-.field-popup table {
-    border-collapse: collapse;
-    font-size: 0.85rem;
-    width: 100%;
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.field-popup td {
-    padding: 0.3rem 0;
-    color: var(--ink);
-    font-weight: 600;
-    text-align: right;
-}
-
-.field-popup td.label {
-    color: var(--ink-soft);
-    font-weight: 500;
-    text-align: left;
-    padding-right: 1.5rem;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-    .header-content { flex-direction: column; align-items: flex-start; gap: 1rem; }
-    .app-controls, .filter-group { width: 100%; flex-wrap: wrap; }
-    .filter-field { flex: 1; min-width: calc(50% - 0.5rem); }
-}
-
-@media (max-width: 768px) {
-    .map-workspace { height: auto; min-height: 0; }
-    .metrics-strip { flex-wrap: wrap; padding: 1rem; gap: 1rem; }
-    .metric-divider { display: none; }
-    .metric-item { min-width: 40%; }
-    .map-container-wrapper { height: 500px; }
-    .floating-legend { bottom: 12px; right: 12px; padding: 0.75rem; }
+.hidden {
+    display: none !important;
 }

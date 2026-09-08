@@ -4,6 +4,7 @@
     const cropSelect = document.getElementById('filter-crop');
     const clearBtn = document.getElementById('clear-filters');
     const breakdownBody = document.getElementById('breakdown-body');
+    const cropChart = document.getElementById('crop-chart');
 
     function buildQuery() {
         const params = new URLSearchParams();
@@ -34,6 +35,32 @@
         });
     }
 
+    function renderChart(rows) {
+        if (!cropChart) return;
+        cropChart.innerHTML = '';
+
+        if (rows.length === 0) {
+            cropChart.innerHTML = '<div class="chart-empty">No fields match the selected filters.</div>';
+            return;
+        }
+
+        // Largest share first so the chart reads top-to-bottom by importance.
+        const sorted = rows.slice().sort(function (a, b) { return b.pct_of_total_area - a.pct_of_total_area; });
+
+        sorted.forEach(function (row) {
+            const color = CROP_COLORS[row.crop_type] || '#999999';
+            const pct = Math.max(row.pct_of_total_area, 0);
+
+            const line = document.createElement('div');
+            line.className = 'chart-row';
+            line.innerHTML =
+                '<span class="chart-row-label"><span class="crop-swatch" style="background:' + color + '"></span>' + row.crop_type + '</span>' +
+                '<span class="chart-row-track"><span class="chart-row-fill" style="width:' + pct + '%; background:' + color + '"></span></span>' +
+                '<span class="chart-row-value">' + pct + '%</span>';
+            cropChart.appendChild(line);
+        });
+    }
+
     function loadStats() {
         const query = buildQuery();
         const url = DASHBOARD_STATS_URL + (query ? '?' + query : '');
@@ -45,6 +72,7 @@
                 document.getElementById('stat-area').textContent = stats.total_area.toLocaleString();
                 document.getElementById('stat-yield').textContent = stats.avg_yield.toLocaleString();
                 renderBreakdown(stats.crop_breakdown);
+                renderChart(stats.crop_breakdown);
             })
             .catch(function (err) {
                 console.error('Failed to load dashboard stats:', err);

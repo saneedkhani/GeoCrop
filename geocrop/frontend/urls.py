@@ -5,6 +5,7 @@ app_name = 'frontend'
 
 urlpatterns = [
     path('', views.home_view, name='home'),
+    path('company/', views.company_view, name='company'),
     path('upload/', views.upload_view, name='upload'),
     path('processing/', views.processing_view, name='processing'),
     path('results/', views.results_view, name='results'),

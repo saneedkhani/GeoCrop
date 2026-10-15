@@ -1,0 +1,282 @@
+\chapter{Software Requirements}
+
+\section{User Interactions / Use Cases}
+The main actors are the \textbf{Agricultural Analyst} (planners and department staff who explore and
+read results), the \textbf{GIS Analyst} (technical user who uploads imagery and checks layers), the
+\textbf{Platform Developer / ML Engineer} (adds and updates models, monitors the system) and the
+\textbf{Processing Worker} (system actor that runs background jobs).
+
+\begin{table}[htbp]
+\centering\small
+\caption{Use cases}
+\label{tab:usecases}
+\begin{tabularx}{\textwidth}{L{1.1cm} L{4.6cm} Y}
+\toprule
+\textbf{ID} & \textbf{Use case} & \textbf{Primary actor}\\
+\midrule
+UC-01 & Browse result layers on the live map & Agricultural Analyst, GIS Analyst\\
+UC-02 & Inspect values at a location & Agricultural Analyst, GIS Analyst\\
+UC-03 & Filter by crop and search field regions & Agricultural Analyst\\
+UC-04 & View crop statistics on the dashboard & Agricultural Analyst\\
+UC-05 & Upload imagery and run analysis & GIS Analyst\\
+UC-06 & Track a processing job & GIS Analyst\\
+UC-07 & Re-analyse an existing image & GIS Analyst\\
+UC-08 & View models and their accuracy & All users\\
+UC-09 & Create an account and sign in & All users\\
+UC-10 & Monitor system status & Platform Developer\\
+UC-11 & Add or update an analysis model & Platform Developer / ML Engineer\\
+UC-12 & Process an image in the background & Processing Worker (system)\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Use Case Diagram}
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  uc/.style={draw=black!70, ellipse, fill=green!4, minimum width=4.4cm, minimum height=0.8cm, font=\scriptsize, align=center},
+  actor/.style={font=\scriptsize, align=center}]
+\newcommand{\stick}[2]{%
+  \begin{scope}[shift={(#1)}]
+  \draw[thick] (0,0.42) circle (0.13);
+  \draw[thick] (0,0.29) -- (0,-0.05) (-0.22,0.18) -- (0.22,0.18) (0,-0.05) -- (-0.17,-0.35) (0,-0.05) -- (0.17,-0.35);
+  \node[actor, below] at (0,-0.38) {#2};
+  \end{scope}}
+\draw[rounded corners=4pt, thick, black!60] (-2.7,-6.3) rectangle (8.1,5.5);
+\node[font=\small\bfseries] at (2.7,5.15) {GeoCrop Platform};
+\node[uc] (u1) at (0,4.3) {UC-01 Browse result layers};
+\node[uc] (u2) at (0,3.25) {UC-02 Inspect values};
+\node[uc] (u3) at (0,2.2) {UC-03 Filter crops / search fields};
+\node[uc] (u4) at (0,1.15) {UC-04 View dashboard statistics};
+\node[uc] (u8) at (0,0.1) {UC-08 View models and accuracy};
+\node[uc] (u9) at (0,-0.95) {UC-09 Create account / sign in};
+\node[uc] (u5) at (5.4,4.3) {UC-05 Upload imagery and run};
+\node[uc] (u6) at (5.4,2.9) {UC-06 Track processing job};
+\node[uc] (u7) at (5.4,1.5) {UC-07 Re-analyse existing image};
+\node[uc] (u12) at (5.4,0.1) {UC-12 Process image in background};
+\node[uc] (u10) at (2.7,-3.3) {UC-10 Monitor system status};
+\node[uc] (u11) at (2.7,-4.6) {UC-11 Add or update a model};
+\stick{-4.5,1.7}{Agricultural\\Analyst}
+\stick{10.2,3.4}{GIS\\Analyst}
+\stick{-4.5,-4.0}{Platform Developer /\\ML Engineer}
+\stick{10.2,-0.2}{Processing\\Worker}
+\foreach \u in {u1,u2,u3,u4,u8,u9} \draw[black!60] (-4.2,1.7) -- (\u.west);
+\foreach \u in {u5,u6,u7} \draw[black!60] (9.9,3.4) -- (\u.east);
+\draw[black!60] (9.9,-0.2) -- (u12.east);
+\draw[black!60] (-4.2,-4.0) -- (u10.west);
+\draw[black!60] (-4.2,-4.0) -- (u11.west);
+\draw[darr] (u5.south) -- node[lbl, right] {$\ll$include$\gg$} (u6.north);
+\draw[darr] (u7.south) -- node[lbl, right] {$\ll$include$\gg$} (u12.north);
+\end{tikzpicture}}
+\caption{Use case diagram of the GeoCrop platform}
+\label{fig:usecase}
+\end{figure}
+
+\section{Detailed Use Cases}
+Three central use cases are given here; the remaining ones are in Appendix~\ref{app:requirements}.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Detailed use case UC-05: Upload imagery and run analysis}
+\label{tab:uc05}
+\begin{tabularx}{\textwidth}{L{3.0cm} Y}
+\toprule
+\textbf{Field} & \textbf{Description}\\
+\midrule
+Actor & GIS Analyst\\
+Preconditions & Platform services are running; the user has access (sign-in optional in the current configuration).\\
+Trigger & User opens Analyze Imagery.\\
+Main flow & 1. User drops or selects a Sentinel-2 GeoTIFF and optionally enters location and capture date.\\
+ & 2. User selects analysis models; dependencies (crop type needs cropland) are resolved automatically.\\
+ & 3. System creates an upload record and returns a signed storage URL; the browser uploads the file directly to object storage.\\
+ & 4. System creates a job with planned steps and queues ingestion; user is taken to the Processing page.\\
+ & 5. Worker validates, reprojects to the model grid, converts to COG and publishes the image layer (UC-12).\\
+ & 6. Worker runs the selected models in dependency order and publishes each result layer with statistics.\\
+ & 7. User sees ``Analysis complete'' and opens the result on the Live Map.\\
+Alternative flows & 1a. File is not a GeoTIFF: rejected before upload with a message. 5a. No coordinate system or wrong band count: job fails with a readable reason. 6a. A model is a placeholder: its step is skipped and marked as not available.\\
+Postconditions & New area, image layer, result layers, statistics and job history are stored.\\
+Related requirements & FR-ING-01 to FR-ING-07, FR-REG-03, NFR-P4\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{Detailed use case UC-01 / UC-02: Browse layers and inspect values}
+\label{tab:uc01}
+\begin{tabularx}{\textwidth}{L{3.0cm} Y}
+\toprule
+\textbf{Field} & \textbf{Description}\\
+\midrule
+Actor & Agricultural Analyst, GIS Analyst\\
+Preconditions & At least one area with published layers exists.\\
+Main flow & 1. User opens Live Map; the first area is selected and imagery and crop type are shown.\\
+ & 2. User toggles layers in the Layer panel, changes opacity and reads legends.\\
+ & 3. The map requests only the tiles in view; the Live map panel shows tiles loaded and latency.\\
+ & 4. User clicks the map; the system returns the value and class label of every visible raster layer and the field region under the cursor.\\
+Alternative flows & 2a. Area has no layers: an empty state explains how to create them. 4a. Point outside the data: ``No data''.\\
+Postconditions & None (read-only).\\
+Related requirements & FR-VIS-01 to FR-VIS-07, NFR-P1 to NFR-P3\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{Detailed use case UC-11: Add or update an analysis model}
+\label{tab:uc11}
+\begin{tabularx}{\textwidth}{L{3.0cm} Y}
+\toprule
+\textbf{Field} & \textbf{Description}\\
+\midrule
+Actor & Platform Developer / ML Engineer\\
+Preconditions & Trained weights (if any) are available.\\
+Main flow & 1. Developer copies the template model folder and edits \code{manifest.yaml} (key, name, requires, outputs, colour map).\\
+ & 2. Developer implements \code{run()} in \code{task.py}: read the image, write a GeoTIFF, return it with class names and metrics.\\
+ & 3. Weights are placed in the model artifact directory.\\
+ & 4. API and worker are restarted; the registry discovers the model and stores it in the catalogue.\\
+ & 5. The model appears on the Models page and in Analyze Imagery; its outputs become layers with legends and statistics.\\
+Alternative flows & 4a. Invalid manifest: the error is shown on the Models and Status pages; other models keep working.\\
+Related requirements & FR-REG-01 to FR-REG-05, NFR-R4\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Functional Requirements}
+\subsection{Module 1: Processing Pipeline (Ingestion and Jobs)}
+\begin{itemize}[leftmargin=2.2cm]
+  \item[FR-ING-01] The system shall accept GeoTIFF uploads up to a configured size limit.
+  \item[FR-ING-02] The system shall upload files directly to object storage through signed URLs,
+        with an API fallback.
+  \item[FR-ING-03] The system shall validate that an image is readable, georeferenced and has a
+        supported band count, and report the reason when it is not.
+  \item[FR-ING-04] The system shall reproject images to the model grid (EPSG:5070, 30~m) and convert
+        them to Cloud Optimized GeoTIFF.
+  \item[FR-ING-05] The system shall run analysis as background jobs and record per-step progress.
+  \item[FR-ING-06] The system shall store optional location and capture date with an upload.
+  \item[FR-ING-07] The system shall allow models to be re-run on an existing image.
+\end{itemize}
+
+\subsection{Module 2: Model Registry and Crop Mapping}
+\begin{itemize}[leftmargin=2.2cm]
+  \item[FR-REG-01] The system shall discover models from folders containing a manifest and a task.
+  \item[FR-REG-02] The system shall list registered models with status, inputs, outputs, valid regions
+        and stored accuracy.
+  \item[FR-REG-03] The system shall resolve model dependencies and run them in order.
+  \item[FR-REG-04] Placeholder models shall return ``not available'' and never produce data.
+  \item[FR-REG-05] A model failure or invalid manifest shall not stop other models from loading.
+  \item[FR-MAP-01] The system shall classify each pixel as cropland or non-cropland.
+  \item[FR-MAP-02] The system shall classify the crop type of cropland pixels into the supported
+        classes, grouping rare classes as ``Other''.
+\end{itemize}
+
+\subsection{Module 3: Catalogue, Storage and Statistics}
+\begin{itemize}[leftmargin=2.2cm]
+  \item[FR-CAT-01] The system shall store areas, images, runs, layers, statistics, field regions and
+        jobs in a spatial database.
+  \item[FR-CAT-02] The system shall compute area per class for each published categorical layer.
+  \item[FR-CAT-03] The system shall derive field regions with area from crop-type output and publish
+        them as vector tiles.
+  \item[FR-CAT-04] Published files shall be immutable and versioned.
+\end{itemize}
+
+\subsection{Module 4: Web GIS Portal}
+\begin{itemize}[leftmargin=2.2cm]
+  \item[FR-VIS-01] The portal shall show a home page and navigation to Dashboard, Live Map, Analyze
+        Imagery and Models.
+  \item[FR-VIS-02] The Live Map shall build its layer panel from the catalogue, grouped by type, with
+        toggles, opacity and legends.
+  \item[FR-VIS-03] The Live Map shall render raster layers as XYZ tiles and vector layers as PMTiles.
+  \item[FR-VIS-04] Clicking the map shall return values and labels of all visible layers.
+  \item[FR-VIS-05] Users shall filter the map by crop and search field regions by crop.
+  \item[FR-VIS-06] The portal shall switch between areas and between acres and hectares.
+  \item[FR-VIS-07] The dashboard shall show area by class, shares and model accuracy.
+  \item[FR-VIS-08] The portal shall show system health and configuration notes.
+  \item[FR-AUT-01] Users shall be able to create an account and sign in; sign-in can be required by
+        configuration.
+\end{itemize}
+
+\section{Non-Functional Requirements}
+\subsection{Reliability}
+\begin{itemize}[leftmargin=1.8cm]
+  \item[NFR-R1] The whole stack shall start with one command and recover from start-up ordering
+        (health-checked dependencies, retrying storage initialisation).
+  \item[NFR-R2] Failed jobs shall record a readable error and leave existing data unchanged.
+  \item[NFR-R3] Rebuilding one service shall not require restarting the others.
+  \item[NFR-R4] One broken model shall not prevent other models from loading.
+\end{itemize}
+\subsection{Usability}
+\begin{itemize}[leftmargin=1.8cm]
+  \item[NFR-U1] Every layer shall have a legend with readable class names.
+  \item[NFR-U2] Errors shall explain what went wrong and how to fix it.
+  \item[NFR-U3] The interface shall work at phone and desktop widths without horizontal scrolling.
+  \item[NFR-U4] Accuracy figures shall be shown with their evaluation protocol.
+\end{itemize}
+\subsection{Performance}
+\begin{itemize}[leftmargin=1.8cm]
+  \item[NFR-P1] One screen of an AOI shall need under 1~MB of map data.
+  \item[NFR-P2] Cold tiles shall return in under 300~ms (median); cached tiles in under 50~ms.
+  \item[NFR-P3] Eight or more layers shall be usable at once without visible lag.
+  \item[NFR-P4] An AOI-sized image shall be processed by cropland and crop-type models in under
+        2 minutes on a laptop CPU.
+  \item[NFR-P5] The selected crop-type model shall run on CPU and be small (target: tens of MB or
+        less).
+\end{itemize}
+\subsection{Security}
+\begin{itemize}[leftmargin=1.8cm]
+  \item[NFR-S1] Passwords shall be stored hashed (bcrypt); sessions use signed tokens.
+  \item[NFR-S2] Secrets shall come from environment variables, not code.
+  \item[NFR-S3] Users shall only see their own and public areas and layers.
+  \item[NFR-S4] Upload URLs shall be short-lived and limited to one object.
+  \item[NFR-S5] The tile service shall take styles from the server, not from request parameters.
+\end{itemize}
+
+\section{Acceptance Criteria}
+\begin{table}[htbp]
+\centering\small
+\caption{Acceptance criteria for important requirements}
+\label{tab:acceptance}
+\begin{tabularx}{\textwidth}{L{2.2cm} Y L{2.2cm}}
+\toprule
+\textbf{Requirement} & \textbf{Acceptance check} & \textbf{Result}\\
+\midrule
+NFR-P1 & Benchmark: data for one screen of AOI1 at zoom 12 below 1~MB. & 337~KB, pass\\
+NFR-P2 & Benchmark: cold tile median below 300~ms; cached below 50~ms. & 47~ms / 1~ms, pass\\
+NFR-P4 & Upload AOI1 Sentinel-2 image, run both models, layers listed. & 57~s, pass\\
+FR-REG-01 & Copy the template model, edit only the manifest; model loads and runs. & Pass (TC-03)\\
+FR-REG-04 & Run yield placeholder; no files produced. & Pass (TC-04)\\
+FR-ING-03 & Upload a 1-band file; job fails with a readable reason. & Pass (TC-13)\\
+FR-VIS-04 & Click a pivot field; crop type and cropland labels returned. & Pass (TC-08)\\
+FR-VIS-05 & Filter ``Apples''; only apple pixels remain on the map. & Pass (TC-09)\\
+NFR-R1 & \code{docker compose down} then \code{up -d}; health OK for all services. & Pass (TC-15)\\
+FR-MAP-02 & Crop-type accuracy and macro-F1 on spatial test blocks reported with intervals. & 76.1\% / 92.2\%, reported\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Requirements Traceability}
+\begin{table}[htbp]
+\centering\small
+\caption{Traceability of key requirements to modules, design, implementation and tests}
+\label{tab:trace}
+\begin{tabularx}{\textwidth}{L{1.9cm} L{1.3cm} L{3.4cm} Y L{1.4cm}}
+\toprule
+\textbf{Req.} & \textbf{Module} & \textbf{Design element} & \textbf{Implementation} & \textbf{Test}\\
+\midrule
+FR-ING-02 & M5 & Signed upload (Fig.~\ref{fig:seq}) & \code{routes.py: create_upload}, \code{storage.py} & TC-11\\
+FR-ING-03/04 & M5, M1 & Ingest task & \code{tasks.py: ingest_upload}, \code{rasters.py} & TC-11, TC-13\\
+FR-ING-05 & M5 & Job states (Fig.~\ref{fig:states}) & \code{tasks.py: run_pipeline}, \code{Job} & TC-11, TC-12\\
+FR-REG-01/03 & M6 & Registry, graph & \code{registry.py}, \code{graph.py} & TC-01, TC-02, TC-03\\
+FR-REG-04 & M6 & StubTask & \code{base.py: StubTask} & TC-04\\
+FR-MAP-01/02 & M2 & Model tasks & \code{builtin/cropland}, \code{builtin/croptype} & TC-11, Ch.~\ref{ch:iter1}\\
+FR-CAT-02 & M7 & ZonalStat & \code{rasters.py: categorical_stats} & TC-07\\
+FR-CAT-03 & M3 & PMTiles layer & \code{vector_tiles.py} & TC-10\\
+FR-VIS-03 & M8 & Tile service & \code{tiles/main.py}, \code{LiveMap.tsx} & TC-05, TC-06\\
+FR-VIS-04 & M8 & Point query & \code{routes.py: point} & TC-08\\
+FR-VIS-05 & M8 & Crop filter & \code{tiles/main.py: classes}, \code{LiveMap.tsx} & TC-09\\
+NFR-P1/P2 & M8 & Tiles, cache & \code{nginx.conf}, \code{benchmark_tiles.py} & TC-14\\
+NFR-R1 & -- & Compose health checks & \code{docker-compose.yml}, \code{minio-init.sh} & TC-15\\
+\bottomrule
+\end{tabularx}
+\end{table}

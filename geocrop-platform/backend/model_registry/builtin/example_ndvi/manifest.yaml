@@ -1,0 +1,16 @@
+# TEMPLATE for new models. Copy this folder, change `key` and `name`, edit task.py.
+key: example_ndvi
+name: NDVI vegetation index
+task: index
+version: 1.0.0
+status: example
+enabled: true
+entrypoint: task:NdviTask
+requires: [imagery]
+input_spec:
+  bands: [B2, B3, B4, B8, B11, B12]
+  accepts_band_counts: [6, 7]
+resources: {queue: models}
+outputs:
+  - {kind: ndvi, group: Indices, format: cog, dtype: float32, colormap: ndvi}
+valid_regions: ["Anywhere with Sentinel-2 bands"]

@@ -1,0 +1,97 @@
+\chapter{Remaining FYP Plan}\label{ch:remaining}
+
+\section{Remaining Scope}
+The remaining scope completes the satellite-to-GIS chain on top of the platform built in Iteration 1:
+the selected crop-type pipeline in production use, a dedicated field-boundary model with area
+validation, yield estimation, wider evaluation across areas, and a hardened, deployed system.
+
+\section{Remaining Modules and Features}
+\begin{table}[htbp]
+\centering\small
+\caption{Remaining modules and features}
+\label{tab:remaining}
+\begin{tabularx}{\textwidth}{L{3.6cm} Y L{1.8cm}}
+\toprule
+\textbf{Module} & \textbf{Feature} & \textbf{Iteration}\\
+\midrule
+M1 Data preparation & Monthly-composite ingestion in the pipeline; exports for remaining AOIs; optional cloud mask & 2, 3\\
+M2 Crop mapping & LightGBM crop-type pipeline as a registry model; CDL confidence rule; cross-area test; field-level classification & 2, 3\\
+M3 Boundaries and area & Field-boundary model; polygon simplification; IoU and area error; acreage against NASS & 3\\
+M4 Yield & NASS yield preparation; yield model; county and field summaries & 3, 4\\
+M5 Processing pipeline & Multi-image upload; batch progress; mosaics & 2\\
+M8 Web GIS portal & All-areas view; compare runs; yield layers and dashboard; exports (GeoJSON, CSV) & 2--4\\
+Hardening & Required sign-in, signed tile access, monitoring, load test, provider basemap & 4\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Remaining Iterations}
+\begin{itemize}
+  \item \textbf{Iteration 2 (mid-Oct -- Dec 2026, FYP-1 end):} crop-type pipeline integration, CDL
+        confidence rule, AOI2 interval, cross-area test, multi-image upload and all-areas view,
+        serving-cost measurement.
+  \item \textbf{Iteration 3 (Feb -- Mar 2027, FYP-2):} field-boundary model and area validation; yield
+        data and first yield model; more AOIs; field-level crop classification experiment.
+  \item \textbf{Iteration 4 (Apr -- May 2027, FYP-2):} yield layers and dashboard, end-to-end evaluation
+        against the success criteria, hardening, deployment, final report and demonstration.
+\end{itemize}
+
+\section{Implementation Plan}
+New models are added through the registry (task and manifest), so the API, schema and interface
+remain stable. The LightGBM pipeline is packaged with its saved model, feature definition and
+metrics file; the ingest step gains a monthly-composite path. The boundary model writes a raster
+or polygons that the existing vector-tile builder publishes as PMTiles. The yield model reads the
+crop-type layer and satellite features and writes a continuous raster plus county summaries. The
+portal adds layer groups and dashboard panels driven by the catalogue.
+
+\section{Testing and Validation Plan}
+\begin{itemize}
+  \item Unit tests for each new model task (validation, outputs, metrics) and the extended pipeline.
+  \item Integration and end-to-end tests repeated for every release; benchmark re-run with the new
+        model and with several areas and layers visible.
+  \item Crop type: all-pixel and CDL-confidence scores, cross-area test, per-class scores, intervals.
+  \item Boundaries: IoU/Dice against reference boundaries and area error; acreage against USDA NASS.
+  \item Yield: $R^2$, RMSE and MAE on held-out years or counties.
+  \item Usability study (P3): five to eight participants, including the supervisors and, if
+        possible, an agricultural user, complete set tasks (find a crop, compare two layers, upload
+        an image); task success, time and a System Usability Scale questionnaire are recorded.
+  \item Resource measurement repeated for every new model (time, peak RAM, storage), as in
+        Table~\ref{tab:resources}.
+\end{itemize}
+
+\section{Deployment Plan}
+The same Docker Compose stack will be deployed to a single cloud virtual machine for the final
+demonstration, with a provider basemap key, required sign-in, HTTPS through the edge server and
+persistent volumes. The architecture allows managed PostgreSQL, S3 storage, a CDN in front of the
+tile path and additional worker and tile replicas if more users or areas are added.
+
+\section{Tentative Timeline}
+\begin{table}[htbp]
+\centering\small
+\caption{Tentative timeline}
+\label{tab:timeline}
+\begin{tabularx}{\textwidth}{L{3.2cm} Y}
+\toprule
+\textbf{Period} & \textbf{Planned work}\\
+\midrule
+Oct 2026 & Mid-term demonstration; start crop-type pipeline integration\\
+Nov 2026 & Pipeline integrated; CDL confidence rule; cross-area test; multi-image upload\\
+Dec 2026 & Serving-cost measurement; FYP-1 final report and demonstration\\
+Feb 2027 & Boundary model; remaining AOI exports; yield data preparation\\
+Mar 2027 & Boundary and area validation; first yield model\\
+Apr 2027 & Yield in portal; end-to-end evaluation; hardening; deployment\\
+May 2027 & Final evaluation, report and demonstration\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Expected Final Deliverables}
+\begin{itemize}
+  \item Deployed GeoCrop platform with crop-type, field-boundary and yield layers, dashboard and model
+        catalogue.
+  \item Source code repositories with tests, documentation and reproducible data preparation.
+  \item Trained models with model cards and stored metrics.
+  \item Evaluation report covering crop type, boundaries, area and yield, with comparison to
+        published work.
+  \item Final FYP report, presentation and demonstration.
+\end{itemize}

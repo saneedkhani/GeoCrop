@@ -1,0 +1,22 @@
+\chapter{Conclusion}
+GeoCrop addresses the slow, manual and hard-to-scale process of mapping crops by field survey and
+GIS digitisation. Research showed that existing tools solve classification, mapping or yield in
+isolation, that many studies report optimistic accuracy from random splits, and that research
+prototypes become slow when results are shipped as large vector files: our own prototype needed
+43.3~MB and 101,435 polygons for one area.
+
+Requirements were defined for a processing pipeline, a plug-in model registry, a spatial catalogue
+and a Web GIS portal, with measurable performance targets. The design keeps model results as rasters,
+serves only visible tiles through TiTiler and PMTiles, runs heavy work in background workers and
+keeps a PostGIS catalogue that drives the interface. Iteration 1 implemented this architecture as
+seven containerised services. One screen of AOI1 now needs 337~KB, cold tiles return in 47~ms and
+cached tiles in 1~ms, an uploaded Sentinel-2 image is analysed and published in 57~s, and new models
+plug in without code changes elsewhere. On the model track, a fair spatial evaluation of eleven
+crop-type models showed that a monthly time series is the key input and that a small CPU-only
+LightGBM pipeline with neighbourhood inputs and a neighbour vote reaches 76.1\% (AOI1) and 92.2\%
+(AOI2), with most remaining errors on field edges.
+
+All platform test cases pass and the main performance targets are met. The main risks are label
+noise in the CDL, generalisation to new areas, and limited yield ground truth. FYP-2 continues by
+integrating the selected crop-type pipeline, adding field-boundary and yield models, evaluating across
+areas, and deploying the hardened system.

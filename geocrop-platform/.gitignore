@@ -1,0 +1,14 @@
+.venv/
+venv/
+node_modules/
+.env
+data/
+*.tif
+*.tiff
+*.pmtiles
+*.joblib
+__pycache__/
+*.pyc
+dist/
+.DS_Store
+.pytest_cache/

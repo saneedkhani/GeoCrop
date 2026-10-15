@@ -1,0 +1,162 @@
+% ------------------------------------------------------------------ Students' Submission
+\chapter*{Students' Submission}
+\addcontentsline{toc}{chapter}{Students' Submission}
+\thispagestyle{plain}
+We certify that this report is submitted as the FYP-1 mid-report for the project titled
+\textit{\projecttitle}.
+
+\vspace{1.2cm}
+\begin{tabular}{p{7cm}l}
+Student 1: Huzaifa Bin Khalid (22I-2332) & Signature: \rule{4.5cm}{0.4pt}\\[1.6cm]
+Student 2: Taha Bashir Awan (23I-0824) & Signature: \rule{4.5cm}{0.4pt}\\[1.6cm]
+Student 3: Saneed Ullah (23I-2568) & Signature: \rule{4.5cm}{0.4pt}\\
+\end{tabular}
+
+% ------------------------------------------------------------------ Anti-Plagiarism
+\chapter*{Anti-Plagiarism Statement}
+\addcontentsline{toc}{chapter}{Anti-Plagiarism Statement}
+\thispagestyle{plain}
+The students certify that this report is their own work and that all sources used in preparing
+the report have been appropriately acknowledged and referenced.
+
+% ------------------------------------------------------------------ Authors' Declaration
+\chapter*{Authors' Declaration}
+\addcontentsline{toc}{chapter}{Authors' Declaration}
+\thispagestyle{plain}
+We declare that the work documented in this report represents the work completed by the
+project team up to the FYP-1 mid-report stage. Contributions, tools, external components,
+and relevant sources are disclosed where applicable, including the use of an AI coding
+assistant during platform implementation (Section~\ref{sec:tools-assisted}).
+
+% ------------------------------------------------------------------ Abstract
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\thispagestyle{plain}
+\textbf{Agricultural crop surveys still depend on field visits, manual crop identification and
+hand-drawn GIS boundaries, which makes them slow, costly and hard to repeat over large regions.
+GeoCrop is a satellite-to-GIS toolkit that learns crop classes from Sentinel-2 imagery and USDA
+Cropland Data Layer (CDL) labels, maps cropland and crop types, derives field regions and area,
+and will add yield estimation, all presented in a fast Web GIS portal. The research gap is that
+existing tools and studies solve crop classification, field mapping or yield prediction in
+isolation, and that research prototypes rarely remain usable once many images and model layers
+must be displayed. The project follows an iterative plan with two parallel tracks. In Iteration 1
+the architecture track replaced the proposal-stage prototype, which sent a 43.3~MB GeoJSON of
+101,435 polygons to the browser, with a tile-based platform: Cloud Optimized GeoTIFF results served
+by TiTiler, PMTiles vector layers, a React and MapLibre client, a FastAPI service, PostgreSQL with
+PostGIS, Celery workers and S3-compatible storage, all run with Docker Compose. One screen of the
+same area now costs 337~KB, cold map tiles return in 47~ms (median) and cached tiles in 1~ms, and an
+uploaded Sentinel-2 image is processed by both crop models and published to the map in 57~s. A
+manifest-based model registry lets new models plug in without changes to the API, database or
+interface. The model track evaluated eleven crop-type models on two study areas with a spatial
+block test; the proposed LightGBM pipeline with neighbourhood inputs and a 3$\times$3 neighbour vote
+reaches 76.1\% accuracy (macro-F1 0.686) in eastern Washington and 92.2\% (macro-F1 0.803) in North
+Dakota, while staying about 2~MB and CPU-only. Validation so far covers registry unit tests,
+end-to-end API and browser tests, a rendering benchmark and the model evaluation protocol. FYP-2
+will integrate the selected crop-type pipeline into the platform, add field-boundary and yield
+models, run cross-area tests and prepare deployment.}
+
+% ------------------------------------------------------------------ Acknowledgments
+\chapter*{Acknowledgments}
+\addcontentsline{toc}{chapter}{Acknowledgments}
+\thispagestyle{plain}
+The project team acknowledges the guidance and support received from the project supervisor,
+Mr. Muhammad Aadil Ur Rehman, the external co-supervisor, Mr. Obaid Ur Rehman (Institute of Space
+Technology), the evaluation panel whose proposal feedback shaped this iteration, and the faculty of
+the FAST School of Computing. We also acknowledge the open data and open-source communities behind
+Sentinel-2, the USDA Cropland Data Layer and the geospatial software used in this project.
+
+% ------------------------------------------------------------------ Executive Summary
+\chapter*{Executive Summary}
+\addcontentsline{toc}{chapter}{Executive Summary}
+\thispagestyle{plain}
+
+\textbf{Project and motivation.} Agriculture departments need to know what is planted, where, over
+how much area, and how much may be harvested. Today this comes from physical surveys followed by
+manual GIS digitisation, which is time-consuming, resource-intensive and difficult to scale.
+GeoCrop automates the chain from satellite imagery to crop maps, field regions, area statistics
+and, in FYP-2, yield estimates, and presents them in a Web GIS portal (SDG~2, Zero Hunger).
+
+\textbf{Scope.} The FYP builds a research-grade but usable prototype on open data: Sentinel-2
+multispectral imagery as input, the USDA Cropland Data Layer (CDL) as training labels for eight
+U.S. areas of interest (AOIs), and USDA NASS statistics for yield. Production-scale national
+deployment, cadastral mapping and disease detection are out of scope.
+
+\textbf{Research findings.} Two lines of investigation informed the design. On the platform side,
+profiling the proposal prototype showed that its crop-type result for one AOI was a 43.3~MB GeoJSON
+with 101,435 polygons (about 750,000 vertices), parsed three times and drawn as SVG, so loading and
+zooming were slow and would not scale to more images or models. Keeping model output as rasters and
+sending only the map tiles in view removes this cost. On the model side, eleven crop-type models
+were compared on AOI1 (eastern Washington, 14 classes) and AOI2 (North Dakota, 9 classes) using
+12 monthly Sentinel-2 composites of 2022 and a spatial block split. A time series raised AOI1
+accuracy from 26.7\% (one date) to 75.2\%; the model family mattered little (eight models within
+2 points); neighbourhood inputs and a 3$\times$3 vote added about 2 points; and 89\% of the remaining
+errors sit on field-edge pixels. A small LightGBM model (about 2~MB, CPU-only) was proposed instead of
+the much slower Presto foundation model. The proposal was approved with minor modifications; the
+panel asked for clearer goals, evaluation criteria that measure performance, light weight, usability
+and integration, and a feasibility analysis of the whole workflow. All three are addressed: goals
+and criteria were restated with measurable targets, and every workflow stage was measured, showing
+that the baseline crop-type model (3.1~GB RAM) is the bottleneck that LightGBM (549~MB) removes.
+
+\textbf{Current implementation.} Iteration 1 delivered a working platform with seven containerised
+services: a React and MapLibre Web GIS client, Nginx with a tile cache, a FastAPI service, a
+TiTiler tile service, Celery workers, PostgreSQL with PostGIS and MinIO object storage. It supports
+browsing and filtering layers, inspecting values at a point, field search, dashboard statistics,
+uploading Sentinel-2 imagery, background model runs with live progress, a model catalogue and
+system health. A model registry runs the current cropland and crop-type models and lets new models
+plug in by folder and manifest.
+
+\textbf{Validation status.} Registry unit tests pass (5/5), including a test that adds a model
+without touching other code. End-to-end tests covered every API route, upload to map in 57~s,
+crop filtering, field search and inspection in the browser. A benchmark measured 337~KB per screen
+against 43.3~MB, cold tiles at 47~ms (median) and cached tiles at 1~ms. Crop-type accuracy is
+reported against CDL labels on spatially separated test blocks, with confidence intervals.
+
+\textbf{Risks.} CDL labels are themselves a model output; results cover one year and two areas; the
+platform still runs the proposal-stage baseline model until the selected pipeline is integrated;
+yield needs reliable historical ground truth; and boundary accuracy is limited at 30~m.
+
+\textbf{Remaining work.} Iteration 2 (end of FYP-1) integrates the LightGBM crop-type pipeline,
+adds the CDL confidence filter and a cross-area test, and supports multi-image upload. FYP-2 adds
+field-boundary and yield models, an end-to-end evaluation against the success criteria, hardening
+and deployment.
+
+% ------------------------------------------------------------------ Abbreviations
+\chapter*{List of Abbreviations}
+\addcontentsline{toc}{chapter}{List of Abbreviations}
+\thispagestyle{plain}
+\begin{longtable}{@{}ll@{}}
+AOI & Area of Interest\\
+API & Application Programming Interface\\
+CDL & Cropland Data Layer (USDA)\\
+COG & Cloud Optimized GeoTIFF\\
+CPU & Central Processing Unit\\
+CRS & Coordinate Reference System\\
+DEI & Diversity, Equity and Inclusion\\
+ERD & Entity Relationship Diagram\\
+F1 & Harmonic mean of precision and recall\\
+FR & Functional Requirement\\
+FYP & Final Year Project\\
+GDAL & Geospatial Data Abstraction Library\\
+GEE & Google Earth Engine\\
+GIS & Geographic Information System\\
+JWT & JSON Web Token\\
+LightGBM & Light Gradient Boosting Machine\\
+MLP & Multi-Layer Perceptron\\
+MVT & Mapbox Vector Tile\\
+NASS & National Agricultural Statistics Service (USDA)\\
+NDVI & Normalized Difference Vegetation Index\\
+NFR & Non-Functional Requirement\\
+NIR & Near-Infrared\\
+OSM & OpenStreetMap\\
+PostGIS & Spatial extension for PostgreSQL\\
+RAM & Random Access Memory\\
+RF & Random Forest\\
+S3 & Simple Storage Service (object storage API)\\
+SDG & Sustainable Development Goal\\
+SUS & System Usability Scale\\
+SWIR & Short-Wave Infrared\\
+TC & Test Case\\
+UC & Use Case\\
+USDA & United States Department of Agriculture\\
+XYZ & Web map tile addressing scheme (zoom, column, row)\\
+\end{longtable}

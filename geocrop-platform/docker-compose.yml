@@ -1,0 +1,105 @@
+name: geocrop
+
+x-backend: &backend
+  build: ./backend
+  env_file: .env
+  volumes:
+    - ./data:/data
+  depends_on:
+    postgres: {condition: service_healthy}
+    redis: {condition: service_healthy}
+    minio-init: {condition: service_completed_successfully}
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: geocrop
+      POSTGRES_PASSWORD: geocrop
+      POSTGRES_DB: geocrop
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U geocrop -d geocrop"]
+      interval: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+
+  # MinIO's own images were removed from Docker Hub and Quay in 2025; this is the
+  # pinned Bitnami build of the same MinIO server (S3 API), which includes `mc`.
+  minio:
+    image: bitnamilegacy/minio:2025.7.23
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
+      MINIO_CONSOLE_PORT_NUMBER: "9001"
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [miniodata:/bitnami/minio/data]
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      retries: 30
+
+  minio-init:
+    image: bitnamilegacy/minio:2025.7.23
+    depends_on:
+      minio: {condition: service_healthy}
+    entrypoint: ["/bin/bash", "/init.sh"]
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-geocrop}
+    volumes: [./infra/minio-init.sh:/init.sh:ro]
+
+  api:
+    <<: *backend
+    ports: ["8000:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/openapi.json')"]
+      interval: 10s
+      retries: 30
+
+  worker:
+    <<: *backend
+    command: celery -A app.workers.celery_app worker -Q ingest,models,default -l info --concurrency 2
+
+  tiles:
+    build: ./tiles
+    env_file: .env
+    environment:
+      API_INTERNAL_URL: http://api:8000/api/v1
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-minioadmin}
+      AWS_S3_ENDPOINT: minio:9000
+      AWS_HTTPS: "NO"
+      AWS_VIRTUAL_HOSTING: "FALSE"
+      GDAL_DISABLE_READDIR_ON_OPEN: EMPTY_DIR
+      GDAL_CACHEMAX: "256"
+    volumes: [./data:/data]
+    depends_on:
+      api: {condition: service_healthy}
+
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api/v1}
+        VITE_AUTH_REQUIRED: ${VITE_AUTH_REQUIRED:-false}
+        VITE_BASEMAP_MODE: ${VITE_BASEMAP_MODE:-osm_fallback}
+        VITE_BASEMAP_SAT_STYLE: ${VITE_BASEMAP_SAT_STYLE:-}
+        VITE_BASEMAP_STREETS_STYLE: ${VITE_BASEMAP_STREETS_STYLE:-}
+        VITE_BASEMAP_KEY: ${VITE_BASEMAP_KEY:-}
+    ports: ["8080:80"]
+    volumes: [nginxcache:/var/cache/nginx/tiles]
+    depends_on: [api, tiles]
+
+volumes:
+  pgdata:
+  miniodata:
+  nginxcache:

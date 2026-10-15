@@ -1,0 +1,71 @@
+\documentclass[10pt]{article}
+\usepackage[a4paper,margin=1.7cm]{geometry}
+\usepackage{times}
+\usepackage{booktabs,tabularx,array,xcolor,colortbl}
+\renewcommand{\arraystretch}{1.22}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\definecolor{head}{HTML}{1F5130}
+\definecolor{band}{HTML}{F1F6F2}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}\setlength{\parskip}{4pt}
+\newcommand{\hd}[1]{\color{white}\bfseries #1}
+\newcommand{\sect}[1]{\vspace{6pt}{\large\bfseries\color{head} #1}\par\vspace{2pt}}
+\begin{document}
+{\LARGE\bfseries GeoCrop: Revised Evaluation Metrics}\\[2pt]
+{\large Focused on performance and computation}\\[2pt]
+{\small F26-155-GeoCrop \;|\; Response to proposal panel comments P2--P4 \;|\; Measured on AOI1, October 2026}
+
+Each metric has a unit, a target and the value measured so far. Accuracy is kept only as a quality gate.
+\textbf{Status:} \emph{met} = measured and within target; \emph{to measure} = planned for Iteration 2.
+
+\small
+\sect{1. Map and rendering performance (primary)}
+\rowcolors{2}{band}{white}
+\begin{tabularx}{\textwidth}{L{4.6cm} L{2.6cm} L{2.9cm} Y}
+\rowcolor{head}\hd{Metric} & \hd{Unit} & \hd{Target} & \hd{Measured}\\
+Data per screen & KB & $<$ 1 MB & \textbf{337 KB} (prototype 43.3 MB)\\
+Cold tile latency & ms, median / p95 & $<$ 300 / $<$ 500 & \textbf{47 / 54}\\
+Cached tile latency & ms, median & $<$ 50 & \textbf{1}\\
+Time to first visible layer & s & $<$ 1 & to measure\\
+Frame rate while panning and zooming & FPS & $\geq$ 30 & to measure\\
+Layers visible at once without lag & count & $\geq$ 8 & to measure\\
+Objects drawn by the browser & count & minimise & 24 tiles (prototype 101,435 polygons)\\
+\end{tabularx}
+
+\sect{2. Processing and computation cost}
+\begin{tabularx}{\textwidth}{L{4.6cm} L{2.6cm} L{2.9cm} Y}
+\rowcolor{head}\hd{Metric} & \hd{Unit} & \hd{Target} & \hd{Measured}\\
+Upload-to-map time (AOI-sized image) & s & $<$ 120 & \textbf{57}\\
+Compute time per stage & s & reported & COG 0.7; cropland 3.8; crop type 10\\
+Peak RAM per stage & MB & $<$ 4 GB (laptop) & 357 / 395 / \textbf{3,145}; LightGBM 549\\
+Inference cost & ms per 1,000 px & $<$ 100 & LightGBM \textbf{35.8} (Presto 2,551)\\
+Model size & MB & tens of MB or less & LightGBM \textbf{1.98} (RF 1,570)\\
+Storage per result & KB & minimise & 222 KB (prototype 43.3 MB)\\
+Idle platform RAM (7 services) & GB & $<$ 2 & \textbf{about 1.0}\\
+\end{tabularx}
+
+\sect{3. Scalability and integration}
+\begin{tabularx}{\textwidth}{L{4.6cm} L{2.6cm} L{2.9cm} Y}
+\rowcolor{head}\hd{Metric} & \hd{Unit} & \hd{Target} & \hd{Status}\\
+Data per screen as images grow (1, 5, 10 AOIs) & KB & roughly flat & to measure\\
+Concurrent tile requests (about 20 users) & p95 ms & $<$ 500 & to measure (load test)\\
+Time to add a new model & files changed & manifest only & \textbf{met} (TC-03)\\
+Parallel jobs without blocking the map & count & $\geq$ 2 & to measure\\
+\end{tabularx}
+
+\sect{4. Quality gate (secondary)}
+\begin{tabularx}{\textwidth}{L{6.6cm} L{3.4cm} Y}
+\rowcolor{head}\hd{Metric} & \hd{Target} & \hd{Measured}\\
+Accuracy / macro-F1 on spatial test blocks & with 95\% interval & AOI1 76.1\% / 0.686; AOI2 92.2\% / 0.803\\
+Accuracy loss from the lighter model & $\leq$ 1 point vs.\ best & LightGBM 0.748 vs.\ RF 0.752\\
+\end{tabularx}
+
+\sect{How the metrics are used}
+\begin{itemize}\setlength{\itemsep}{1pt}
+  \item \textbf{Cost per unit of result:} ms per 1,000 pixels, KB per screen, seconds per AOI, so the prototype and the platform are directly comparable.
+  \item \textbf{Old against new:} the 130$\times$ data reduction and 1,021 ms JSON parse against 47 ms tiles are reported side by side.
+  \item \textbf{Median and p95,} not only averages, to reflect real use.
+  \item \textbf{Resource analysis:} time, peak RAM and storage are measured for every workflow stage and repeated for each new model.
+\end{itemize}
+\end{document}

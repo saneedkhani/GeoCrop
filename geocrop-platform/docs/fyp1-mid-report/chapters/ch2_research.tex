@@ -1,0 +1,192 @@
+\chapter{Research and Existing Solutions}
+
+\section{Research Method / Approach}
+Knowledge was built along four lines.
+\begin{enumerate}
+  \item \textbf{Literature review.} Studies on CDL-based crop classification, crop mapping in
+        Pakistan, field-boundary extraction, yield prediction and time-series deep learning were
+        reviewed (Table~\ref{tab:literature}). Eight further papers were read for the crop-type
+        comparison (Section~\ref{sec:papers}).
+  \item \textbf{Data analysis.} The supplied CDL rasters and AOI shapefiles were analysed for class
+        distribution, field layout and edge pixels; Sentinel-2 composites were exported with Google
+        Earth Engine and aligned to the CDL grid.
+  \item \textbf{Controlled experiments.} Crop-type models were compared under one protocol: 12
+        monthly composites of 2022, a spatial block split with a buffer, normalisation on training
+        data only, and all choices made on validation data (Chapter~\ref{ch:iter1}).
+  \item \textbf{Engineering investigation.} The proposal-stage prototype was profiled to find its
+        performance limits, candidate geospatial technologies were compared, and the chosen design
+        was benchmarked on the real AOI1 data.
+\end{enumerate}
+
+\section{Existing Solutions / Products}
+\textbf{USDA CropScape / CDL} provides annual georeferenced crop maps and acreage statistics for the
+United States. It is an already-classified product and does not analyse new imagery supplied by a
+user, estimate yield, or provide a configurable workflow.
+
+\textbf{QGIS and ArcGIS-type GIS tools} visualise geospatial data, edit polygons, calculate area and
+manage coordinates. Crop identification and yield prediction still require separate data, models and
+expert workflows.
+
+\textbf{DSSAT crop models} simulate crop growth and estimate yield from agronomic and environmental
+inputs. They do not classify crops from satellite imagery or extract field regions.
+
+\textbf{OneSoil and similar precision-agriculture platforms} combine satellite imagery, vegetation
+indices and field monitoring in a map interface~\cite{onesoil2026}. They are commercial and
+closed, so models, training data and accuracy are not transparent or adaptable to a department's
+data.
+
+\textbf{Prior FYPs} typically address one task: crop classification (model accuracy only), GIS or
+field mapping (classification supplied manually), or yield prediction (no automatic crop mapping or
+boundaries).
+
+\textbf{Research literature.} Table~\ref{tab:literature} summarises the most relevant studies.
+
+\begingroup\small
+\begin{longtable}{L{0.45cm} L{2.8cm} L{1.9cm} L{4.1cm} L{4.0cm}}
+\caption{Summary of literature and gaps for GeoCrop}\label{tab:literature}\\
+\toprule
+\textbf{No.} & \textbf{Paper / year} & \textbf{Focus} & \textbf{Key contribution} & \textbf{Gap for GeoCrop}\\
+\midrule\endfirsthead
+\toprule
+\textbf{No.} & \textbf{Paper / year} & \textbf{Focus} & \textbf{Key contribution} & \textbf{Gap for GeoCrop}\\
+\midrule\endhead
+\midrule\multicolumn{5}{r}{\textit{Continued on next page}}\\\endfoot
+\bottomrule\endlastfoot
+1 & Lin et al.\ 2022~\cite{lin2022} & CDL refinement & Spatial-temporal decision tree flags and corrects questionable CDL pixels; pixel and county validation. & Shows CDL label noise at edges; no new-image classification or yield.\\
+2 & Hao et al.\ 2020~\cite{hao2020} & CDL transfer learning & High-confidence CDL pixels with Landsat/Sentinel NDVI time series train Random Forests (OA 86--98\%). & Classification only; no GIS boundary or yield workflow.\\
+3 & Tran et al.\ 2022~\cite{tran2022} & 10~m crop type from CDL & Monthly Sentinel-2 composites and good-quality CDL samples; OA 94\% (South Dakota), 83\% (California). & Random sample split and quality filtering; no platform.\\
+4 & Wang et al.\ 2020~\cite{wang2020} & Historical mapping & CDL labels with Landsat reconstruct 20 years of corn and soybean in the Midwest. & Two crops only; no integrated portal.\\
+5 & Khan et al.\ 2023~\cite{khan2023} & Punjab crop ID & Stacked LSTM on Sentinel-2 time series for rice, wheat, sugarcane. & Relies on GPS ground surveys; no boundaries or yield.\\
+6 & Latif et al.\ 2023~\cite{latif2023} & Pakistan cropland & Multi-date Sentinel-2 and ML on Google Earth Engine for cropland extent. & Cropland only; no crop types or yield.\\
+7 & Muqaddas et al.\ 2024~\cite{muqaddas2024} & Punjab sugarcane & Deep learning on Sentinel-2 indices; cross-district tests. & Single crop; no integrated workflow.\\
+8 & Edri et al.\ 2026~\cite{edri2026} & Field boundaries & SAM, U-Net, DeepLabV3, SegFormer on time series refine field polygons. & Assumes a parcel registry; no crop type or yield.\\
+9 & Desloires et al.\ 2023~\cite{desloires2023} & Corn yield & Sentinel-2 and environmental features; out-of-year evaluation. & Assumes known fields and yield labels.\\
+10 & Xiao et al.\ 2024~\cite{xiao2024} & Wheat yield & Attention 1D CNN on Sentinel-2 time series. & Single crop; no mapping.\\
+11 & You et al.\ 2017~\cite{you2017} & County yield & Deep Gaussian process on remote-sensing histograms. & County level; no field mapping.\\
+12 & Zhang et al.\ 2025~\cite{zhang2025} & Within-season U.S. crop type & Transformer on HLS time series, CDL labels, 37 crop types. & Large model (about 17~M parameters); research code only.\\
+13 & Li et al.\ 2024~\cite{li2024} & In-season CDL & Trusted pixels from CDL history, Random Forest; corn/soy F1 0.85--0.97. & No user-facing workflow.\\
+14 & Tseng et al.\ 2023~\cite{tseng2023} & Presto & Light pre-trained transformer for pixel time series. & Benefit shown mostly with few labels.\\
+15 & Szwarcman et al.\ 2024~\cite{szwarcman2024} & Prithvi-EO-2.0 & 300--600~M parameter foundation model; crop segmentation mIoU up to 50.7. & Too heavy for a light CPU system.\\
+\end{longtable}
+\endgroup
+
+\section{Comparison of Existing Solutions}
+\begin{table}[htbp]
+\centering\small
+\caption{Comparison of existing solutions with GeoCrop on project-relevant criteria}
+\label{tab:compare}
+\begin{tabular}{L{3.6cm} *{6}{>{\centering\arraybackslash}p{1.45cm}}}
+\toprule
+\textbf{Solution} & \textbf{Classifies new imagery} & \textbf{Field regions / area} & \textbf{Yield} & \textbf{Web map} & \textbf{Open / transparent} & \textbf{Scales to many layers}\\
+\midrule
+USDA CropScape / CDL & -- & partial & -- & \checkmark & \checkmark & \checkmark\\
+QGIS / ArcGIS & -- & \checkmark & -- & partial & partial & partial\\
+DSSAT & -- & -- & \checkmark & -- & \checkmark & --\\
+OneSoil-type platforms & \checkmark & \checkmark & partial & \checkmark & -- & \checkmark\\
+Prior FYPs & partial & partial & partial & partial & \checkmark & --\\
+GeoCrop proposal prototype & \checkmark & partial & -- & \checkmark & \checkmark & --\\
+\textbf{GeoCrop (this work)} & \checkmark & \checkmark & FYP-2 & \checkmark & \checkmark & \checkmark\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Limitations and Gaps}
+\begin{itemize}
+  \item \textbf{Fragmented workflows.} Crop classification, field mapping and yield prediction are
+        usually separate tools or studies; users must combine them by hand.
+  \item \textbf{Dependence on manual surveys.} Local studies rely on GPS field surveys
+        \cite{khan2023}; CDL supervision reduces the labels needed for early development.
+  \item \textbf{Optimistic evaluation.} Many studies use random pixel or sample splits. Our own test
+        showed that a random split leaks neighbouring pixels (macro-F1 0.396 random against 0.147
+        with blocks on the same model), so published numbers are not always comparable.
+  \item \textbf{Prototypes that do not scale.} Research outputs are often shipped as large vector
+        files. The proposal prototype needed 43.3~MB and 101,435 SVG polygons for one AOI's crop-type
+        layer, which made the map slow and would not scale to several images and models.
+  \item \textbf{Heavy models.} Foundation models are accurate but need hundreds of megabytes or GPUs,
+        which conflicts with a light, affordable system.
+  \item \textbf{Label uncertainty.} CDL contains mixed-pixel and boundary errors~\cite{lin2022}, which
+        must be accounted for in training and reporting.
+\end{itemize}
+
+\section{Proposed Solution}
+GeoCrop connects the tasks into one satellite-to-GIS workflow and builds it on an architecture
+designed for performance and change:
+\begin{itemize}
+  \item \textbf{Raster-first results served as tiles.} Model outputs are stored as Cloud Optimized
+        GeoTIFFs and served as small map tiles by TiTiler; vector field regions are packed as
+        PMTiles. The browser downloads only what is on screen.
+  \item \textbf{A plug-in model registry.} Cropland, crop-type, boundary and yield models share one
+        contract; dependencies run in order; new models are added by folder and manifest.
+  \item \textbf{An asynchronous processing pipeline.} Uploads go straight to object storage; Celery
+        workers validate, preprocess, run models and publish each layer with statistics.
+  \item \textbf{A transparent, light crop-type model.} A LightGBM pipeline on monthly Sentinel-2
+        composites with neighbourhood inputs and a neighbour vote, evaluated with a spatial block
+        split and reported with intervals and per-class scores.
+  \item \textbf{A usable portal.} Layer panel, crop filter, field search, point inspection,
+        dashboard, model catalogue and system health in one interface.
+\end{itemize}
+
+\section{Complex Computing Problem}
+Under the Seoul Accord definition~\cite{seoulaccord2026}, GeoCrop is a complex computing problem: it
+has no obvious solution, combines several knowledge areas and has interdependent parts.
+\begin{table}[htbp]
+\centering\small
+\caption{Mapping of GeoCrop components to complex computing problem attributes}
+\label{tab:ccp}
+\begin{tabularx}{\textwidth}{L{3.8cm} Y}
+\toprule
+\textbf{Component} & \textbf{Attributes and evidence}\\
+\midrule
+Crop mapping and classification & \textit{Conflicting requirements} (accuracy against model size, speed and cost); \textit{depth of analysis} (no single best model: eleven compared, label noise, edge pixels); \textit{depth of knowledge} (ML, multispectral remote sensing, phenology); \textit{interdependence} (preprocessing and label alignment drive accuracy).\\
+\addlinespace
+Field regions, boundaries and area & \textit{Depth of knowledge} (CRS, raster/vector processing, area in projected units); \textit{interdependence} (crop-map errors propagate to polygons and acreage); \textit{consequences} (wrong acreage misleads planning).\\
+\addlinespace
+Yield estimation & \textit{Depth of analysis} (temporal features, scale of ground truth); \textit{consequences} (production forecasts); \textit{conflicting requirements} (granularity against available labels).\\
+\addlinespace
+Platform and rendering & \textit{Conflicting requirements} (detail against speed and data volume); \textit{depth of knowledge} (COG, tiling, vector tiles, spatial databases, distributed jobs); \textit{stakeholder needs} (technical and non-technical users); \textit{interdependence} (every model output must become a correct, fast layer).\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Technical Challenges}
+\begin{itemize}
+  \item \textbf{Rendering performance.} Pixel-level predictions vectorised into polygons produce very
+        large files (101,435 polygons for one AOI). Displaying many images and layers requires
+        tiling, caching and immutable versioned URLs.
+  \item \textbf{Spatial alignment.} Sentinel-2 (10--20~m, UTM) must be reprojected exactly onto the
+        CDL grid (EPSG:5070, 30~m); web maps use EPSG:3857.
+  \item \textbf{Label noise and edge pixels.} In AOI1, 47\% of test pixels touch another class and
+        hold 89\% of the errors; CDL itself is noisy there.
+  \item \textbf{Evaluation leakage.} Random pixel splits overstate accuracy; spatial blocks with a
+        buffer are needed.
+  \item \textbf{Cloud gaps.} Missing monthly observations must be filled consistently.
+  \item \textbf{Model size and speed.} The default Random Forest is 328~MB; the baseline crop-type
+        model in the platform is 1.5~GB and must be loaded per run; Presto is 660 times slower than
+        an MLP.
+  \item \textbf{Integration.} Model outputs, statistics, styles and files must stay consistent across
+        the database, object storage, tile service and client.
+  \item \textbf{Operations.} Container start-up races, service discovery after rebuilds and browser
+        caching had to be handled for a reliable demonstration.
+\end{itemize}
+
+\section{Research Findings and Design Decisions}
+\begin{table}[htbp]
+\centering\small
+\caption{How research findings shaped design decisions}
+\label{tab:findings}
+\begin{tabularx}{\textwidth}{L{6.4cm} Y}
+\toprule
+\textbf{Finding} & \textbf{Decision}\\
+\midrule
+One AOI's crop-type GeoJSON was 43.3~MB with 101,435 polygons; parsing alone took about 1~s. & Keep results as rasters (COG); serve XYZ tiles with TiTiler; vectors only as PMTiles.\\
+Most of the prototype polygons (85\%) were single-pixel squares. & Raster is the source of truth; polygons are derived, filtered by minimum size and simplified per zoom.\\
+A time series lifted AOI1 accuracy from 26.7\% to 75.2\%. & Use 12 monthly composites of the label year as model input.\\
+Eight model families finished within 2 points; logistic regression 4.8 points behind. & Choose the model on cost: LightGBM (about 2~MB, CPU); keep Random Forest as baseline.\\
+Presto matched simple models but was about 660 times slower per pixel. & Reverse the earlier Presto recommendation for the U.S./CDL case.\\
+Random pixel splits leak neighbours (macro-F1 0.396 against 0.147). & Spatial 100$\times$100 block split, 3-pixel buffer, choices on validation only.\\
+89\% of errors are on field-edge pixels. & Neighbourhood inputs and a 3$\times$3 vote now; field-level classification later.\\
+Models and outputs will keep changing (cropland, crop type, boundary, yield). & Manifest-based model registry with a dependency graph and generic layer catalogue.\\
+Heavy work (image conversion, inference) takes tens of seconds. & Asynchronous Celery jobs with progress; direct-to-storage uploads.\\
+\bottomrule
+\end{tabularx}
+\end{table}

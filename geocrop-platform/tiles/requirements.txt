@@ -1,0 +1,4 @@
+titiler.core
+rio-tiler
+httpx
+uvicorn[standard]

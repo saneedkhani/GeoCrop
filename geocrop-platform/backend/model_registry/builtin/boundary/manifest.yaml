@@ -1,0 +1,12 @@
+key: boundary
+name: Field boundaries
+task: boundary
+version: 0.0.0
+status: stub
+enabled: true
+entrypoint: task:BoundaryTask
+requires: [imagery]
+outputs:
+  - {kind: boundary, group: Boundaries, format: pmtiles, dtype: vector}
+valid_regions: []
+notes: Registered placeholder. Drop the real boundary model into task.py and set status to ready.

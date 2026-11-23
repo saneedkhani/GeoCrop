@@ -4,6 +4,7 @@ import Map, { Layer, NavigationControl, Popup, ScaleControl, Source } from "reac
 import type { MapLayerMouseEvent, MapRef } from "react-map-gl/maplibre";
 import { Link } from "react-router-dom";
 import { api, fmt, HA_TO_ACRES, type CatalogLayer } from "../api/client";
+import AnalyzeModal from "../components/AnalyzeModal";
 import { useFields, useLayers, useStats } from "../api/hooks";
 import { basemapStyle, BASEMAP_MODE, type BasemapId } from "../config";
 import LayerPanel, { Dock } from "../map/LayerPanel";
@@ -55,6 +56,9 @@ export default function LiveMap() {
   const [search, setSearch] = useState("");
   const [inspect, setInspect] = useState<Inspect | null>(null);
   const [zoom, setZoom] = useState(10);
+  const [analyzeOpen, setAnalyzeOpen] = useState(false);
+  const knownAois = useRef<Set<string> | null>(null);
+  const [showNewArea, setShowNewArea] = useState(false);
   const { visible, opacity, setVisible, cropFilter, setCropFilter } = useLayerUi();
   const traffic = useTileTraffic();
 
@@ -62,6 +66,12 @@ export default function LiveMap() {
   const { data: allLayers = [], isLoading, error } = useLayers();
 
   useEffect(() => { if (!aoiId && aois.length) setAoiId(aois[0].id); }, [aois, aoiId]);
+  // After an analysis from the pop-up, switch to the area it created (if it made a new one).
+  useEffect(() => {
+    if (!showNewArea || !knownAois.current) return;
+    const added = aois.find((a) => !knownAois.current!.has(a.id));
+    if (added) { setAoiId(added.id); setShowNewArea(false); }
+  }, [aois, showNewArea]);
   const aoi = aois.find((a) => a.id === aoiId);
 
   const layers = useMemo(
@@ -108,13 +118,19 @@ export default function LiveMap() {
 
   return (
     <div className="workspace">
+      <AnalyzeModal
+        open={analyzeOpen}
+        onClose={() => setAnalyzeOpen(false)}
+        onStarted={() => { knownAois.current = new Set(aois.map((a) => a.id)); }}
+        onViewResults={() => { setAnalyzeOpen(false); setShowNewArea(true); }}
+      />
       <aside className="ws-sidebar">
         <div className="ws-header">
           <Link to="/" className="ws-brand">GeoCrop</Link>
           <nav className="ws-nav">
             <Link to="/">Home</Link>
             <Link to="/dashboard">Dashboard</Link>
-            <Link to="/analyze">Analyze</Link>
+            <a href="/analyze" onClick={(e) => { e.preventDefault(); setAnalyzeOpen(true); }}>Analyze</a>
           </nav>
         </div>
 

@@ -109,8 +109,10 @@ def main() -> None:
 
     print("5/7 Model results: cropland and crop type")
     runs = {}
-    for key, kind, group in (("cropland", "cropland", "Cropland"), ("croptype", "croptype", "Crop type")):
-        model = db.scalar(select(Model).where(Model.key == key))
+    # The seeded cropland raster was made by the previous Random Forest, so it is credited to that (backup) model.
+    for key, kind, group, model_key in (("cropland", "cropland", "Cropland", "cropland_rf_legacy"),
+                                        ("croptype", "croptype", "Crop type", "croptype")):
+        model = db.scalar(select(Model).where(Model.key == model_key))
         metrics = json.loads(need(DATA / f"results/aoi1_{key}.metrics.json").read_text())
         rep = metrics.get("report", {})
         run = ModelRun(aoi_id=aoi.id, model_id=model.id, status="done", started_at=now, finished_at=now,

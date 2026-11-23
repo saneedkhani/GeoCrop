@@ -2,7 +2,7 @@ import { fmt } from "../api/client";
 import { useModels } from "../api/hooks";
 import Icon from "../components/Icon";
 
-const status = { ready: ["Ready", ""], example: ["Index", "info"], stub: ["Coming soon", "warn"] } as const;
+const status = { ready: ["Ready", ""], example: ["Index", "info"], stub: ["Coming soon", "warn"], backup: ["Backup (off)", "neutral"] } as const;
 
 export default function Models() {
   const { data, isLoading } = useModels();

@@ -71,20 +71,41 @@ def continuous_stats(path: str) -> dict:
             "mean": float(valid.mean()), "min": float(valid.min()), "max": float(valid.max())}
 
 
-def preprocess_to_model_grid(src_path: str, dst_path: Path) -> Path:
+def preprocess_to_model_grid(src_path: str, dst_path: Path, keep_integer: bool = False) -> Path:
     """Reproject an uploaded image onto the grid the models were trained on
-    (EPSG:5070, 30 m, bilinear), keeping band order. Mirrors training alignment."""
+    (EPSG:5070, 30 m, bilinear), keeping band order. Mirrors training alignment.
+
+    keep_integer: keep integer data (e.g. the int16 77-band monthly composite, nodata -32768) instead of
+    converting to float32, so the stored image is half the size."""
     with rasterio.open(src_path) as src:
         if src.crs is None:
             raise ValueError("The image has no coordinate reference system, so it cannot be placed on the map.")
+        integer = keep_integer and np.issubdtype(np.dtype(src.dtypes[0]), np.integer)
+        dtype = src.dtypes[0] if integer else "float32"
+        nodata = (src.nodata if src.nodata is not None else -32768) if integer else np.nan
         dst_transform, w, h = calculate_default_transform(
             src.crs, TARGET_CRS, src.width, src.height, *src.bounds, resolution=TARGET_RES)
         prof = src.profile.copy()
         prof.update(driver="GTiff", crs=TARGET_CRS, transform=dst_transform, width=w, height=h,
-                    dtype="float32", nodata=np.nan, tiled=True, blockxsize=512, blockysize=512, compress="deflate")
+                    dtype=dtype, nodata=nodata, tiled=True, blockxsize=512, blockysize=512, compress="deflate")
+        prof.pop("predictor", None)
         with rasterio.open(dst_path, "w", **prof) as dst:
             for b in range(1, src.count + 1):
                 reproject(rasterio.band(src, b), rasterio.band(dst, b), src_nodata=src.nodata,
-                          dst_nodata=np.nan, resampling=Resampling.bilinear)
+                          dst_nodata=nodata, resampling=Resampling.bilinear)
             dst.descriptions = src.descriptions
+    return dst_path
+
+
+def extract_bands(src_path: str | Path, dst_path: Path, bands: tuple[int, ...]) -> Path:
+    """Copy a few bands (1-based) into a new GeoTIFF, e.g. a 3-band display copy of a 77-band composite."""
+    with rasterio.open(src_path) as src:
+        prof = src.profile.copy()
+        prof.update(driver="GTiff", count=len(bands), tiled=True, blockxsize=512, blockysize=512, compress="deflate")
+        for k in ("interleave", "photometric"):
+            prof.pop(k, None)
+        with rasterio.open(dst_path, "w", **prof) as dst:
+            for i, b in enumerate(bands, 1):
+                dst.write(src.read(b), i)
+                dst.set_band_description(i, src.descriptions[b - 1] or f"band {b}")
     return dst_path

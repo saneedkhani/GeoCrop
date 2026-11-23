@@ -13,6 +13,7 @@ from app.core.config import get_settings
 from app.db.models import Layer, ZonalStat
 from app.services import rasters
 from app.services.storage import get_storage
+from model_registry.colormaps import rgb
 from model_registry.raster_io import to_cog
 
 # Zoom range from native resolution: 30 m pixels are fully resolved around z13.
@@ -48,6 +49,34 @@ def publish_raster_layer(db: Session, *, local_path: Path, kind: str, name: str,
     for row in stats:
         db.add(ZonalStat(layer_id=layer.id, zone_type="aoi", zone_id=str(aoi_id), **row))
     return layer
+
+
+MONTHLY_COMPOSITE_BANDS = 77
+JULY_TRUE_COLOUR = (36, 35, 34)       # B04, B03, B02 of July (month 4 of 7, 11 values per month)
+
+
+def publish_source_image(db: Session, *, cog_path: Path, aoi_id, name: str, band_count: int,
+                         is_public: bool = False) -> tuple[Layer, str]:
+    """Store an analysis image and publish its imagery layer. Returns (imagery layer, storage key for the models).
+
+    Most images are shown directly. A 77-band monthly composite gets a small 3-band copy (July true colour)
+    for the map, so tiles read 3 bands instead of 77; the models always read the full image."""
+    if band_count != MONTHLY_COMPOSITE_BANDS:
+        style, legend = rgb([3, 2, 1], [0, 2000])
+        layer = publish_raster_layer(db, local_path=cog_path, kind="imagery", name=name, group="Imagery",
+                                     aoi_id=aoi_id, run_id=None, style=style, legend=legend, categorical=False,
+                                     already_cog=True, is_public=is_public)
+        return layer, layer.storage_key
+    key = f"sources/{uuid.uuid4().hex}/image.cog.tif"
+    get_storage().put_file(cog_path, key, "image/tiff")
+    with tempfile.TemporaryDirectory() as tmp:
+        display = rasters.extract_bands(cog_path, Path(tmp) / "display.tif", JULY_TRUE_COLOUR)
+        style, _ = rgb([1, 2, 3], [0, 2000])
+        layer = publish_raster_layer(db, local_path=display, kind="imagery", name=name, group="Imagery",
+                                     aoi_id=aoi_id, run_id=None, style=style,
+                                     legend=[{"label": "True colour, July (B4, B3, B2)"}], categorical=False,
+                                     is_public=is_public)
+    return layer, key
 
 
 def publish_pmtiles_layer(db: Session, *, local_path: Path, kind: str, name: str, group: str, aoi_id, run_id,

@@ -84,12 +84,23 @@ Copy `geocrop-platform/backend/model_registry/builtin/example_ndvi`, edit the ma
 | Benchmark | [`geocrop-platform/docs/benchmark.md`](geocrop-platform/docs/benchmark.md) |
 | Status, upgrade path, demo script | [`geocrop-platform/docs/`](geocrop-platform/docs/) |
 
+## Cropland model
+
+The cropland model is a class-weighted **LSTM** (Gajardo 2023 / Kerner 2020), selected from 18 model variants.
+It reads a 77-band monthly Sentinel-2 composite (April to October, 10 bands + NDVI per month) and scored a mean
+balanced accuracy of **0.865** on US areas it had never seen (leave-one-area-out over 8 areas). The model file is
+98 KB and runs on CPU. The previous Random Forest is kept as a disabled backup plug-in (`cropland_rf_legacy`).
+Comparison on AOI 1: [`docs/cropland-model-comparison/`](geocrop-platform/docs/cropland-model-comparison/).
+
+Build the 77-band input for any area with `build_composite_stac.py` (free Earth Search data), then upload it in
+Analyze Imagery.
+
 ## Crop-type model work
 
 Eleven crop-type models were compared on two U.S. areas (AOI 1 eastern Washington, AOI 2 North
 Dakota) with a spatial block split. A small CPU-only LightGBM pipeline (about 2 MB) is proposed:
-76.1% accuracy on AOI 1 and 92.2% on AOI 2. The platform currently runs a baseline Random Forest;
-integrating the selected pipeline is the first task of Iteration 2.
+76.1% accuracy on AOI 1 and 92.2% on AOI 2. The platform currently runs a baseline Random Forest for
+crop type; replacing it with the selected pipeline is planned for Iteration 2.
 
 ## Roadmap
 

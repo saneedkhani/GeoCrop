@@ -18,16 +18,16 @@ from sqlalchemy import select
 from app.db.models import Aoi, Job, Model, ModelRun, SourceImage, Upload
 from app.db.session import SessionLocal
 from app.services import rasters
-from app.services.layers import publish_raster_layer
+from app.services.layers import MONTHLY_COMPOSITE_BANDS, publish_raster_layer, publish_source_image
 from app.services.models_sync import artifact_dir, get_registry
 from app.services.storage import get_storage
 from app.workers.celery_app import celery_app
 from model_registry.base import RunContext
-from model_registry.colormaps import rgb, style_for_output
+from model_registry.colormaps import style_for_output
 from model_registry.raster_io import to_cog
 from model_registry.graph import PlanError
 
-MAX_BANDS = 20
+MAX_BANDS = 80   # up to the 77-band monthly composite (7 months x 11) used by the LSTM cropland model
 
 
 def _now():
@@ -76,24 +76,23 @@ def ingest_upload(job_id: str, upload_id: str, model_keys: list[str], location: 
             if not info["crs"]:
                 raise ValueError("The image has no coordinate reference system, so it cannot be placed on the map.")
             if not 3 <= info["band_count"] <= MAX_BANDS:
-                raise ValueError(f"The image has {info['band_count']} bands. Expected a Sentinel-2 stack "
-                                 "(B2, B3, B4, B8, B11, B12 and optionally NDVI).")
+                raise ValueError(f"The image has {info['band_count']} bands. Expected a Sentinel-2 stack: the 77-band "
+                                 "monthly composite (April-October x 11) or B2, B3, B4, B8, B11, B12 (+ NDVI).")
             _set(db, job, 0.12, "Image is valid", "Validate image", "done")
 
             _set(db, job, 0.15, "Aligning to the model grid (EPSG:5070, 30 m)", "Convert to cloud-optimized GeoTIFF")
-            pre = rasters.preprocess_to_model_grid(str(raw), Path(tmp) / "pre.tif")
+            pre = rasters.preprocess_to_model_grid(str(raw), Path(tmp) / "pre.tif",
+                                                   keep_integer=info["band_count"] == MONTHLY_COMPOSITE_BANDS)
             cog = to_cog(pre, Path(tmp) / "image.cog.tif", categorical=False)
             footprint = rasters.footprint_wgs84(str(cog))
             aoi = Aoi(owner_id=upload.user_id, name=(location or "").strip() or f"Upload: {upload.filename}",
                       geom=from_shape(footprint, srid=4326))
             db.add(aoi)
             db.flush()
-            style, legend = rgb([3, 2, 1], [0, 2000])
-            layer = publish_raster_layer(db, local_path=cog, kind="imagery", name=f"Image: {upload.filename}",
-                                         group="Imagery", aoi_id=aoi.id, run_id=None, style=style, legend=legend,
-                                         categorical=False, already_cog=True)
+            _, source_key = publish_source_image(db, cog_path=cog, aoi_id=aoi.id, name=f"Image: {upload.filename}",
+                                                 band_count=info["band_count"])
             src = SourceImage(aoi_id=aoi.id, upload_id=upload.id, kind="sentinel2_upload", captured_on=capture_date or None,
-                              storage_key=layer.storage_key, bounds=from_shape(footprint, srid=4326),
+                              storage_key=source_key, bounds=from_shape(footprint, srid=4326),
                               crs_original=info["crs"], band_count=info["band_count"], resolution_m=30.0)
             db.add(src)
             upload.aoi_id, upload.status = aoi.id, "ingested"
@@ -183,5 +182,6 @@ def _training_metrics(manifest: dict) -> dict:
         return {}
     m = json.loads(path.read_text())
     rep = m.get("report", {})
-    return {"accuracy": rep.get("accuracy"), "macro_f1": (rep.get("macro avg") or {}).get("f1-score"),
-            "split": m.get("split"), "note": m.get("note")}
+    out = {"accuracy": rep.get("accuracy"), "macro_f1": (rep.get("macro avg") or {}).get("f1-score"),
+           "split": m.get("split"), "note": m.get("note")}
+    return {k: v for k, v in out.items() if v is not None}

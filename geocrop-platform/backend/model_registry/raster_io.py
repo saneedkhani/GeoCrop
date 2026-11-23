@@ -25,6 +25,8 @@ def s2_features(block: np.ndarray) -> np.ndarray:
     training composite: (B8 - B4) / (B8 + B4).
     """
     block = block.astype("float32")
+    if block.shape[0] == 77:
+        return _features_from_monthly(block)
     if block.shape[0] == 7:
         return block
     if block.shape[0] == 6:
@@ -32,7 +34,26 @@ def s2_features(block: np.ndarray) -> np.ndarray:
         with np.errstate(divide="ignore", invalid="ignore"):
             ndvi = (b8 - b4) / (b8 + b4)
         return np.concatenate([block, ndvi[None]], axis=0)
-    raise ValueError(f"Expected 6 or 7 Sentinel-2 bands, got {block.shape[0]}")
+    raise ValueError(f"Expected 6 or 7 Sentinel-2 bands or the 77-band monthly composite, got {block.shape[0]}")
+
+
+# 77-band monthly composite = 7 months (Apr..Oct) x [B02 B03 B04 B05 B06 B07 B08 B8A B11 B12 NDVI]
+_MONTHLY_LEGACY_BANDS = [0, 1, 2, 6, 8, 9]          # B02 B03 B04 B08 B11 B12
+_MAY_TO_SEP = slice(1, 6)                           # same season as the single composite the RF models were trained on
+
+
+def _features_from_monthly(block: np.ndarray) -> np.ndarray:
+    """The 7 single-composite features (B2 B3 B4 B8 B11 B12 NDVI) from a 77-band monthly composite:
+    median over May..September per band, NDVI from those medians (as the GEE median composite did)."""
+    import warnings
+    h, w = block.shape[1:]
+    b = np.where(np.isfinite(block) & (block > -32000), block, np.nan).reshape(7, 11, h, w)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        med = np.nanmedian(b[_MAY_TO_SEP][:, _MONTHLY_LEGACY_BANDS], axis=0)
+        b4, b8 = med[2], med[3]
+        ndvi = (b8 - b4) / (b8 + b4)
+    return np.concatenate([med, ndvi[None]], axis=0).astype("float32")
 
 
 def output_profile(src: rasterio.io.DatasetReader, dtype: str, nodata) -> dict:

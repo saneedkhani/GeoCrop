@@ -22,10 +22,25 @@ function send(url: string, body: Blob | FormData, onProgress: (f: number) => voi
   });
 }
 
-const sourceName: Record<string, string> = { sentinel2_composite: "Sentinel-2 composite", sentinel2_upload: "Uploaded image" };
+const sourceName: Record<string, string> = {
+  sentinel2_composite: "Sentinel-2 composite", sentinel2_upload: "Uploaded image",
+  sentinel2_monthly_2022: "Sentinel-2 monthly composite 2022 (77 bands)",
+};
 
 export default function Analyze() {
   const navigate = useNavigate();
+  return (
+    <div className="page-center">
+      <span className="icon-tile"><Icon name="upload" size={22} /></span>
+      <h1>Process Satellite Data</h1>
+      <p>Upload raw Sentinel-2 imagery to map cropland and classify crops. Results appear on the live map as soon as each model finishes.</p>
+      <AnalyzeForm onStarted={(jobId) => navigate(`/processing/${jobId}`)} />
+    </div>
+  );
+}
+
+/** Upload / re-analyse form. Used by the Analyze page and the Live Map pop-up. */
+export function AnalyzeForm({ onStarted }: { onStarted: (jobId: string) => void }) {
   const token = useAuth((s) => s.token);
   const fileInput = useRef<HTMLInputElement>(null);
   const { data: models } = useModels();
@@ -66,7 +81,10 @@ export default function Analyze() {
       const job = await post<Job>(`/uploads/${up.id}/complete`, {
         model_keys: selected, location: location || null, capture_date: date || null,
       });
-      navigate(`/processing/${job.id}`);
+      setBusy(false);
+      setFile(null);
+      setPct(0);
+      onStarted(job.id);
     } catch (e) {
       setError((e as Error).message);
       setBusy(false);
@@ -79,18 +97,14 @@ export default function Analyze() {
     setError(null);
     try {
       const job = await post<Job>("/runs", { source_image_id: sourceId, model_keys: selected });
-      navigate(`/processing/${job.id}`);
+      onStarted(job.id);
     } catch (e) {
       setError((e as Error).message);
     }
   }
 
   return (
-    <div className="page-center">
-      <span className="icon-tile"><Icon name="upload" size={22} /></span>
-      <h1>Process Satellite Data</h1>
-      <p>Upload raw Sentinel-2 imagery to map cropland and classify crops. Results appear on the live map as soon as each model finishes.</p>
-
+    <>
       <div className="card upload-card">
         <div className={`dropzone ${drag ? "drag" : ""}`} role="button" tabIndex={0}
           onClick={() => fileInput.current?.click()}
@@ -155,6 +169,6 @@ export default function Analyze() {
           <button className="btn-secondary" onClick={rerun}>Run selected models</button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -3,7 +3,7 @@ import numpy as np
 import rasterio
 
 from model_registry.base import ModelTask, RunContext, RunResult
-from model_registry.raster_io import output_profile, windows
+from model_registry.raster_io import output_profile, s2_features, windows
 
 
 class NdviTask(ModelTask):
@@ -13,7 +13,11 @@ class NdviTask(ModelTask):
             wins = list(windows(src))
             with rasterio.open(out_path, "w", **output_profile(src, "float32", -9999.0)) as dst:
                 for i, w in enumerate(wins):
-                    b4, b8 = src.read(3, window=w).astype("float32"), src.read(4, window=w).astype("float32")
+                    if src.count == 77:   # monthly composite: B4/B8 from the May-September medians
+                        x = s2_features(src.read(window=w))
+                        b4, b8 = x[2], x[3]
+                    else:
+                        b4, b8 = src.read(3, window=w).astype("float32"), src.read(4, window=w).astype("float32")
                     with np.errstate(divide="ignore", invalid="ignore"):
                         ndvi = (b8 - b4) / (b8 + b4)
                     dst.write(np.where(np.isfinite(ndvi), ndvi, -9999.0).astype("float32"), 1, window=w)

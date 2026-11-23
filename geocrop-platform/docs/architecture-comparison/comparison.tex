@@ -1,0 +1,67 @@
+\documentclass[10pt]{article}
+\usepackage[a4paper,landscape,margin=1.6cm]{geometry}
+\usepackage{times}
+\usepackage{booktabs,tabularx,array,xcolor,colortbl}
+\usepackage[hidelinks]{hyperref}
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\definecolor{head}{HTML}{1F5130}
+\definecolor{band}{HTML}{F1F6F2}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\begin{document}
+
+{\LARGE\bfseries GeoCrop: Base Architecture vs.\ Old Prototype}\\[3pt]
+{\large Which technology replaces which, and how the change affects performance}\\[2pt]
+{\small F26-155-GeoCrop \;|\; Measured on AOI1 (eastern Washington, crop-type layer) \;|\; October 2026}
+
+\vspace{8pt}
+\small
+\rowcolors{2}{band}{white}
+\begin{tabularx}{\textwidth}{L{2.6cm} L{4.6cm} L{4.6cm} Y}
+\rowcolor{head}
+\color{white}\bfseries Layer &
+\color{white}\bfseries Old prototype &
+\color{white}\bfseries Base architecture (replacement) &
+\color{white}\bfseries Effect on performance\\
+Web framework / backend & Django: renders pages on the server and also serves data & \textbf{FastAPI} (REST API only) & Async API returns small JSON (catalogue, stats); pages no longer rebuilt per request\\
+Frontend & Django templates + plain JavaScript & \textbf{React} (Vite build) served by \textbf{Nginx} & Built once into static files; Nginx serves them with compression and caching\\
+Map library & Leaflet 1.9 drawing every shape (SVG / canvas) & \textbf{MapLibre GL JS} (WebGL, via react-map-gl) & GPU draws tiles; many layers stay smooth while zooming and panning\\
+Model results on the map & One 43.3~MB GeoJSON file with 101,435 polygons ($\sim$750k vertices), sent whole & \textbf{Rasters as Cloud-Optimised GeoTIFF} served by \textbf{TiTiler} as map tiles & Only visible tiles are sent: \textbf{337~KB per screen} instead of 43.3~MB ($\sim$130$\times$ less)\\
+Field boundaries & Same large GeoJSON & \textbf{PMTiles} vector tiles (1.86~MB file, read by byte range) & Browser fetches only the tiles in view; no full-file download or parse\\
+Database & SQLite file; sample statistics hand-written in Python & \textbf{PostgreSQL + PostGIS} & Spatial queries and real statistics computed from results; safe for many users\\
+Processing of uploads & Upload converted to one PNG preview; no model run & \textbf{Celery} workers with \textbf{Redis} queue; model registry & Models run in the background, block by block; the map and API stay responsive; \textbf{57~s} upload-to-map\\
+File storage & Files on the local disk of the web server & \textbf{MinIO} (S3-compatible object storage), signed upload URLs & Uploads go straight to storage, not through the API; tiles read files by byte range\\
+Caching & None & \textbf{Nginx tile cache} & Repeat tiles served in \textbf{1~ms}\\
+Models & Hard-wired scripts & \textbf{Plug-in model registry} (folder + manifest) & New models added without changing API, database or interface\\
+Deployment & Manual Python setup on one machine & \textbf{Docker Compose}: 7 services, one command & Same stack on every machine; services scale or restart independently\\
+\end{tabularx}
+
+\vspace{10pt}
+\begin{minipage}[t]{0.56\textwidth}
+{\normalsize\bfseries Measured effect (AOI1, crop-type layer, zoom 12)}\\[3pt]
+\rowcolors{2}{band}{white}
+\begin{tabularx}{\linewidth}{L{3.6cm} L{2.9cm} Y}
+\rowcolor{head}
+\color{white}\bfseries Measure & \color{white}\bfseries Old prototype & \color{white}\bfseries Base architecture\\
+Data for one screen & 43.3~MB & \textbf{337~KB} (24 tiles)\\
+Objects the browser draws & 101,435 polygons & 24 tile images\\
+Server / parse time & 1,021~ms just to parse JSON & cold tile 47~ms median (p95 54~ms)\\
+Repeat view & Re-download or re-parse & cached tile \textbf{1~ms}\\
+Stored result size & 43.3~MB GeoJSON & 222~KB compressed GeoTIFF\\
+Uploaded image & PNG preview only & analysed and on map in \textbf{57~s}\\
+\end{tabularx}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.41\textwidth}
+{\normalsize\bfseries Why it is faster, in short}
+\begin{itemize}\setlength{\itemsep}{1pt}
+  \item \textbf{Send only what is visible.} Tiles replace whole files, so data per screen stays small as images and models grow.
+  \item \textbf{Keep results as rasters.} A pixel map is far smaller than polygons and needs no conversion.
+  \item \textbf{Do heavy work in the background.} Queued workers run models; the website never waits.
+  \item \textbf{Cache repeated work.} Nginx keeps tiles that were already drawn.
+  \item \textbf{Draw with the GPU.} MapLibre renders tiles with WebGL instead of thousands of shapes.
+\end{itemize}
+\end{minipage}
+
+\end{document}

@@ -1,0 +1,166 @@
+\chapter{Testing and Early Validation}
+
+\section{Testing Strategy}
+Testing follows the two tracks. The platform is tested from the smallest unit (the model registry)
+up to the whole system in a browser, with a dedicated performance benchmark because performance is
+the main design goal. The models are validated by an evaluation protocol designed to avoid
+optimistic results: spatial block split, validation-only decisions, a single test pass, intervals
+and per-class scores. Every defect found was fixed and re-tested, and the fix is recorded in the
+repository history.
+
+\textbf{Revised evaluation criteria.} The panel found that the proposal's evaluation criteria did not
+measure the project's real challenges and named usability, performance and integration as the main
+concerns, together with a lightweight system (P2, P3). The criteria were therefore rewritten so that
+each concern has a metric, a target and a measured value (Table~\ref{tab:evalcriteria}). Model
+accuracy remains a criterion, but is no longer the only one.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Revised evaluation criteria and status at mid-term}
+\label{tab:evalcriteria}
+\begin{tabularx}{\textwidth}{L{1.9cm} Y L{2.2cm} L{2.9cm}}
+\toprule
+\textbf{Concern} & \textbf{Metric} & \textbf{Target} & \textbf{Measured (status)}\\
+\midrule
+\multirow{4}{*}{Performance} & Map data for one screen & $<$1~MB & 337~KB (met)\\
+ & Cold / cached tile latency (median) & $<$300 / $<$50~ms & 47 / 1~ms (met)\\
+ & Upload to map for an AOI-sized image & $<$2~min & 57~s (met)\\
+ & Layers usable at once without lag & $\geq$8 & Not measured yet\\
+\midrule
+\multirow{3}{*}{Lightweight} & Peak RAM per workflow stage & Fits a laptop & 0.36--3.1~GB, fits 15~GB (met; Table~\ref{tab:resources})\\
+ & Selected crop-type model: size, CPU cost & CPU only, tens of MB & 1.98~MB, 35.8~ms/1000~px (met)\\
+ & Whole platform on one host & One command & 7 services, 1.0~GB idle (met)\\
+\midrule
+\multirow{3}{*}{Integration} & Upload reaches the map without manual steps & All steps automatic & TC-11 (met)\\
+ & New model added by folder and manifest only & No other change & TC-03 (met)\\
+ & Layers from different models and images on one map & Same catalogue & 6 layers on AOI1 (met)\\
+\midrule
+\multirow{2}{*}{Usability} & Legends, readable errors, phone and desktop widths & NFR-U1--U3 & Checked (met)\\
+ & Task success and questionnaire score (SUS) in a user study & $\geq$90\%, SUS $\geq$68 & Planned, Iteration 2\\
+\midrule
+Model quality & Accuracy and macro-F1 on spatial test blocks, with 95\% intervals & Reported honestly & AOI1 76.1\% / 0.686; AOI2 92.2\% / 0.803\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Test Levels and Techniques}
+\begin{table}[htbp]
+\centering\small
+\caption{Test levels and techniques}
+\label{tab:levels}
+\begin{tabularx}{\textwidth}{L{2.8cm} Y L{3.0cm}}
+\toprule
+\textbf{Level} & \textbf{What and how} & \textbf{Tooling}\\
+\midrule
+Unit & Registry discovery, dependency planning, error messages, placeholder behaviour, add-a-model flow, on small synthetic rasters. & pytest\\
+Integration & Every API route through Nginx with real data in PostGIS and MinIO; tile responses and cache headers; PMTiles range reads with CORS. & curl, scripted checks\\
+System / end-to-end & Upload to map; re-analysis; Live Map filter, field search and inspection; dashboard; cold start of the stack. & Headless and interactive browser\\
+Performance & Data per screen, cold and cached tile latency, tile sizes, parse cost of the old approach. & \code{tools/benchmark_tiles.py}\\
+Model validation & Spatial block test, bootstrap intervals, per-class scores, cost per 1000 pixels. & Evaluation notebooks\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Test Cases}
+\begin{table}[htbp]
+\centering\small
+\caption{Test cases (details in Appendix~\ref{app:tests})}
+\label{tab:testcases}
+\begin{tabularx}{\textwidth}{L{1.1cm} Y L{2.0cm}}
+\toprule
+\textbf{ID} & \textbf{Test} & \textbf{Requirement}\\
+\midrule
+TC-01 & Built-in models load without errors & FR-REG-01\\
+TC-02 & Dependencies resolve in order (crop type after cropland; yield after both) & FR-REG-03\\
+TC-03 & Add a model by copying the template and editing only the manifest & FR-REG-01, UC-11\\
+TC-04 & Placeholder model produces no data & FR-REG-04\\
+TC-05 & Raster tiles return PNG with immutable cache headers & FR-VIS-03\\
+TC-06 & Outside-raster tile returns 204; cached tile served by Nginx & FR-VIS-03, NFR-P2\\
+TC-07 & Statistics return area per class for the crop-type layer & FR-CAT-02\\
+TC-08 & Point query returns crop and cropland labels & FR-VIS-04\\
+TC-09 & Crop filter shows only the selected crop & FR-VIS-05\\
+TC-10 & PMTiles range read (206) with CORS & FR-CAT-03\\
+TC-11 & Upload Sentinel-2 image and run cropland + crop type & FR-ING-01..05\\
+TC-12 & Re-run NDVI model on an existing image & FR-ING-07\\
+TC-13 & Upload a 1-band file & FR-ING-03\\
+TC-14 & Rendering benchmark & NFR-P1, NFR-P2\\
+TC-15 & Cold start of the full stack & NFR-R1\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Test Results}
+\begin{table}[htbp]
+\centering\small
+\caption{Test results}
+\label{tab:testresults}
+\begin{tabularx}{\textwidth}{L{1.1cm} Y L{1.3cm}}
+\toprule
+\textbf{ID} & \textbf{Observed result} & \textbf{Status}\\
+\midrule
+TC-01--04 & 5 of 5 pytest cases passed in 0.4~s. & Pass\\
+TC-05 & Four raster layers returned 256$\times$256 PNG tiles with \code{public, max-age=31536000, immutable}. & Pass\\
+TC-06 & Out-of-range tiles returned 204; repeated requests showed \code{X-Cache-Status: HIT}. & Pass\\
+TC-07 & Crop-type layer: 14 classes, 59,537~ha (147,118 acres) classified; Alfalfa 18.1\%, Corn 12.1\%, Apples 11.6\%. & Pass\\
+TC-08 & Clicking a pivot field returned ``Alfalfa'' and ``Cropland'' (API) and ``Spring Wheat'' in another field (browser). & Pass\\
+TC-09 & Filter ``Apples'' left only apple pixels over the imagery. & Pass\\
+TC-10 & PMTiles range request returned 206 with \code{Access-Control-Allow-Origin}. & Pass\\
+TC-11 & Job completed in 57~s; all six steps done; both layers listed on the map. & Pass\\
+TC-12 & NDVI run completed in about 1~s; new layer listed. & Pass\\
+TC-13 & Job failed with ``The image has 1 bands. Expected a Sentinel-2 stack (B2, B3, B4, B8, B11, B12 and optionally NDVI).'' & Pass\\
+TC-14 & 337~KB per screen, cold 47~ms median, cached 1~ms (Table~\ref{tab:benchmark}). & Pass\\
+TC-15 & After \code{down} and \code{up -d}, all seven services healthy; health status ``ok''. & Pass\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Acceptance Testing / Validation}
+The acceptance checks of Table~\ref{tab:acceptance} were run on the integrated system: all platform
+checks passed. Crop-type validation followed the protocol of Section~\ref{sec:protocol} and is
+summarised in Table~\ref{tab:both}; live inference in the platform was also compared with the
+training-time raster for AOI1, and class areas agreed closely (Apples 6,927~ha in both; Alfalfa
+11,340~ha against 10,781~ha, the difference coming from masking by the predicted rather than the
+reference cropland). A supervised acceptance session with the supervisor and external co-supervisor
+is planned at the mid-term demonstration.
+
+\section{Edge and Failure Cases}
+\begin{itemize}
+  \item Non-GeoTIFF files are rejected before upload; images without a CRS or with an unsupported band
+        count fail the job with a readable reason (TC-13).
+  \item Placeholder models are skipped and marked ``not available'' instead of failing the job.
+  \item Requests for tiles outside a raster return 204, which the map treats as empty.
+  \item Points outside the data return ``No data''.
+  \item A broken model manifest is reported on the Models and Status pages while other models load.
+  \item Float imagery with NaN no-data values is handled (stored as null in the catalogue).
+\end{itemize}
+
+\section{Defects and Corrective Actions}
+\begin{table}[htbp]
+\centering\small
+\caption{Defects found during Iteration 1 and corrective actions}
+\label{tab:defects}
+\begin{tabularx}{\textwidth}{L{0.6cm} Y Y}
+\toprule
+\textbf{No.} & \textbf{Defect} & \textbf{Corrective action}\\
+\midrule
+1 & Official MinIO images no longer available from public registries. & Pinned Bitnami build of the same MinIO server; documented.\\
+2 & Table name \code{layer} clashed with the PostGIS \code{topology.layer} table. & Renamed to \code{map_layer}; migrations limited to GeoCrop tables.\\
+3 & rasterio failed in slim containers (missing \code{libexpat}). & Added the system library to both images.\\
+4 & MapLibre web worker failed to load (wrong path, then wrong MIME type for \code{.mjs}). & Explicit worker URL; Nginx MIME type rule.\\
+5 & Bucket initialisation raced MinIO start-up on cold boot. & Retry loop in the initialiser; cold start re-tested.\\
+6 & Uploaded-image layers returned 404 tiles: NaN no-data could not be serialised. & Store non-finite no-data as null; repaired existing rows.\\
+7 & Browser kept an old page after a new build. & \code{no-cache} for the page shell, long cache for hashed assets.\\
+8 & Site lost the API after a backend container was rebuilt (stale address). & Nginx resolves services through Docker DNS at request time.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Current Validation Status}
+\begin{itemize}
+  \item \textbf{Platform:} all 15 test cases pass; performance targets NFR-P1, NFR-P2 and NFR-P4 are met
+        on AOI1; NFR-P3 (eight or more layers visible at once) has not been measured yet.
+  \item \textbf{Models:} crop-type pipeline validated on two areas with spatial blocks and intervals;
+        not yet validated across areas or against field data; CDL confidence rule pending.
+  \item \textbf{Not yet validated:} boundary accuracy (IoU, area error), yield metrics, multi-user
+        load, and the integrated LightGBM pipeline's serving cost.
+\end{itemize}

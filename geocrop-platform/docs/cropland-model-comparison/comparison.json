@@ -1,0 +1,111 @@
+{
+ "grid": {
+  "width": 1331,
+  "height": 1238,
+  "pixel_ha": 0.09
+ },
+ "label_cropland_share": 0.5948,
+ "common_pixels": 1111982,
+ "models": {
+  "rf_single": {
+   "pixels": 1111982,
+   "accuracy": 0.9356,
+   "balanced_accuracy": 0.9289,
+   "cropland": {
+    "precision": 0.9301,
+    "recall": 0.9641,
+    "f1": 0.9468
+   },
+   "non_cropland": {
+    "precision": 0.9443,
+    "recall": 0.8936,
+    "f1": 0.9183
+   },
+   "confusion": {
+    "tp": 637672,
+    "fn": 23735,
+    "fp": 47920,
+    "tn": 402655
+   },
+   "coverage": 0.9998,
+   "cropland_area_ha": 61703,
+   "predict_seconds": 3.24,
+   "peak_rss_mb": 659
+  },
+  "lstm": {
+   "pixels": 1111982,
+   "accuracy": 0.936,
+   "balanced_accuracy": 0.9417,
+   "cropland": {
+    "precision": 0.9794,
+    "recall": 0.9117,
+    "f1": 0.9443
+   },
+   "non_cropland": {
+    "precision": 0.8823,
+    "recall": 0.9718,
+    "f1": 0.9249
+   },
+   "confusion": {
+    "tp": 602982,
+    "fn": 58425,
+    "fp": 12702,
+    "tn": 437873
+   },
+   "coverage": 1.0,
+   "cropland_area_ha": 76916,
+   "predict_seconds": 10.88,
+   "peak_rss_mb": 2226
+  },
+  "rf_derived": {
+   "pixels": 1111982,
+   "accuracy": 0.9141,
+   "balanced_accuracy": 0.9132,
+   "cropland": {
+    "precision": 0.9363,
+    "recall": 0.9181,
+    "f1": 0.9271
+   },
+   "non_cropland": {
+    "precision": 0.8831,
+    "recall": 0.9084,
+    "f1": 0.8955
+   },
+   "confusion": {
+    "tp": 607214,
+    "fn": 54193,
+    "fp": 41287,
+    "tn": 409288
+   },
+   "coverage": 1.0,
+   "cropland_area_ha": 81947,
+   "predict_seconds": 4.03,
+   "peak_rss_mb": 2586
+  }
+ },
+ "label_cropland_area_ha": 59537,
+ "agreement_rf_vs_lstm": 0.9224,
+ "disagreement": {
+  "pixels": 86282,
+  "lstm_right": 43405,
+  "rf_right": 42877
+ },
+ "lstm_probability": {
+  "mean": 0.518,
+  "share_uncertain_0.4_0.6": 0.02
+ },
+ "croptype": {
+  "pixels": 661408,
+  "agreement_single_vs_derived": 0.2418,
+  "croptype_single": {
+   "accuracy_vs_cdl": 0.6253,
+   "predict_seconds": 7.02,
+   "peak_rss_mb": 3882
+  },
+  "croptype_derived": {
+   "accuracy_vs_cdl": 0.2608,
+   "predict_seconds": 7.3,
+   "peak_rss_mb": 3853
+  }
+ }
+}

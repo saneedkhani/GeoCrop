@@ -1,0 +1,187 @@
+\chapter{Proposal Feedback and Iteration Plan}
+
+\section{Proposal Feedback Summary}\label{sec:feedback}
+The proposal defence result was sent by the FYP Committee on 14 September 2026. The decision for
+F26-155-GeoCrop was \textbf{Approved with Minor Modifications}. The panel's comments are summarised
+below; each is numbered P1--P7 and tracked in the action register.
+\begin{enumerate}[label=\textbf{P\arabic*.}, leftmargin=1.1cm]
+  \item \textbf{Clarify the intended goals.} The proposal claimed crop mapping, GIS integration and
+        real-time estimation without stating clearly what each meant.
+  \item \textbf{Improve the evaluation metrics.} The proposed criteria did not measure the actual
+        challenges of the project.
+  \item \textbf{Measure the real challenges: computational performance, a lightweight system and
+        usability.} The panel stated that the evaluation criteria were wrong, and that usability,
+        performance and integration are the main concerns.
+  \item \textbf{Analyse feasibility.} The complexity and resource requirements of the complete
+        workflow had not been analysed beforehand.
+  \item \textbf{Do not run everything in a single flow.} The computational and space requirements are
+        high enough that running the entire process in a single flow may not be practical.
+  \item \textbf{Integration of huge datasets.} Large datasets are not easy to load and use together.
+  \item \textbf{Work on presentation skills.}
+\end{enumerate}
+The panel also asked the team to incorporate all changes it suggested. These comments set the agenda
+for Iteration 1. The architecture track answered P3--P6 by redesigning the platform around
+performance, light weight and integration, and measuring each one. The model track answered P2--P4
+by changing the evaluation protocol and selecting the model on cost as well as accuracy.
+
+The team's own review after the defence found further issues: the prototype could not run models on
+uploaded images, the first evaluation used an optimistic random pixel split, models would keep
+changing during the project, and the iteration plan in the proposal slides no longer matched the
+order in which the work had to be done. These items are recorded separately in the register, with
+their source.
+
+\section{Proposal Action Register}
+\begin{table}[htbp]
+\centering\small
+\caption{Proposal action register (summary; full register with evidence in Appendix~\ref{app:register})}
+\label{tab:register}
+\begin{tabularx}{\textwidth}{L{0.8cm} L{3.6cm} Y L{1.3cm} L{1.7cm}}
+\toprule
+\textbf{No.} & \textbf{Feedback / required change} & \textbf{Action taken} & \textbf{Status} & \textbf{Evidence}\\
+\midrule
+P1 & Clarify the intended goals. & Objectives restated with measurable targets; ``real-time'' defined as an uploaded image on the map in about a minute; scope split by FYP phase. & Done & Sec.~\ref{sec:goals}\\
+P2, P3 & Evaluation metrics must measure performance, light weight, usability and integration. & Evaluation criteria rewritten around these concerns, each with a metric and target. Performance, cost and integration measured; usability checked against requirements, user study planned. & Partly done & Table~\ref{tab:evalcriteria}\\
+P4 & Analyse feasibility and resource requirements of the whole workflow. & Time, memory and storage measured for every stage; the baseline crop-type model (3.1~GB RAM) found to dominate, so it is replaced by LightGBM (549~MB). & Done & Table~\ref{tab:resources}\\
+P5 & A single-flow process is not practical. & Workflow split into independent queued stages; results kept as compressed rasters; maps served tile by tile on demand. & Done & Sec.~\ref{sec:feasibility}\\
+P6 & Huge datasets are hard to load and use together. & Only visible tiles are sent: 337~KB per screen instead of 43.3~MB; layers share one catalogue. & Done & Table~\ref{tab:benchmark}\\
+P7 & Presentation skills. & Fixed demonstration script on the running system; each member presents their own track; rehearsals before evaluations. & In progress & Sec.~\ref{sec:demo}\\
+T1 & Team review: uploaded images were never analysed. & Upload, validation, preprocessing and model runs as background jobs; 57~s upload-to-map. & Done & TC-11, Fig.~\ref{fig:seq}\\
+T2 & Team review: random pixel split overstates accuracy. & Spatial block split with buffer; choices on validation; intervals over test blocks. & Done & Sec.~\ref{sec:protocol}\\
+T3 & Team review: models will keep changing. & Manifest-based model registry; add-a-model test. & Done & TC-03\\
+T4 & Team review: iteration plan in the slides outdated. & Two-track iteration plan (Sections~\ref{sec:it1plan}, \ref{sec:it2plan}, Chapter~\ref{ch:remaining}). & Done & This chapter\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Iteration Strategy}
+Development is iterative and time-boxed. Each iteration ends with a working, demonstrable increment,
+a short evaluation, and an updated plan. Because GeoCrop has two kinds of risk, work proceeds on two
+parallel tracks that meet at the end of each iteration:
+\begin{itemize}
+  \item \textbf{Architecture track} (platform): data flow, storage, processing, map delivery and
+        interface. Risk: performance and integration.
+  \item \textbf{Model track} (research): data preparation, model comparison and evaluation. Risk:
+        accuracy, generalisation and cost.
+\end{itemize}
+The two tracks share one contract: a model is a plug-in that reads an aligned image and writes a
+georeferenced raster, so research results can move into the platform without redesign.
+Decisions are made on measured evidence (benchmarks for the platform, validation scores for models)
+and recorded in this report and the repository.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Updated iteration plan (replaces the phase plan presented in the proposal slides)}
+\label{tab:iterations}
+\begin{tabularx}{\textwidth}{L{2.4cm} L{2.6cm} Y}
+\toprule
+\textbf{Iteration} & \textbf{Period} & \textbf{Focus}\\
+\midrule
+Iteration 1 & Sep -- mid-Oct 2026 (FYP-1, to mid-term) & Base architecture with implementation and performance benchmark; crop-type model evaluation and comparison.\\
+Iteration 2 & mid-Oct -- Dec 2026 (FYP-1, to final) & Integrate the selected crop-type pipeline into the platform; CDL confidence rule; cross-area test; multi-image upload.\\
+Iteration 3 & Feb -- Mar 2027 (FYP-2) & Field-boundary model and area validation; yield data and first yield model; more AOIs.\\
+Iteration 4 & Apr -- May 2027 (FYP-2) & End-to-end evaluation, hardening, deployment and final documentation.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Iteration 1 Plan}\label{sec:it1plan}
+\textbf{Objectives.} (1) Replace the prototype with a base architecture that stays fast as images and
+models grow, implemented and benchmarked on real data. (2) Find a crop-type model that is accurate
+under a fair test and light enough for the platform.
+
+\textbf{Selected features.} Tile-based Live Map with layer panel, opacity, legends, crop filter,
+field search and point inspection; dashboard statistics from the database; upload and background
+processing with progress; model registry with the current cropland and crop-type models;
+system-status page. On the model side: monthly composites for AOI1 and AOI2, eleven-model
+comparison, improvement ladder, error analysis and comparison with published papers.
+
+\textbf{Deliverables.} Platform repository with Docker Compose stack and documentation; benchmark
+results; crop-type results report; this mid-report.
+
+\textbf{Evidence.} Benchmark tables, test results, screenshots (Section~\ref{sec:demo}) and
+repository history (Appendix~\ref{app:repo}).
+
+\section{Iteration 2 Plan}\label{sec:it2plan}
+\textbf{Objectives.} Bring the selected crop-type pipeline into the platform and strengthen the
+evaluation.
+
+\textbf{Selected features.}
+\begin{itemize}
+  \item Package the LightGBM pipeline (monthly composites, neighbourhood inputs, 3$\times$3 vote) as a
+        registry model and replace the baseline crop-type model in the platform.
+  \item Monthly-composite ingestion in the processing pipeline.
+  \item Fix one CDL confidence rule and report it next to the all-pixel score; compute the AOI2
+        interval and interior table.
+  \item Cross-area test (train on one AOI, test on the other).
+  \item Multi-image upload and an ``all areas'' map view.
+  \item Measure end-to-end serving cost of the improved pipeline on CPU and repeat the workflow
+        resource measurement (Table~\ref{tab:resources}).
+  \item Usability study: task-based sessions with a questionnaire score and task times (P3).
+  \item Multi-layer test: eight or more layers visible at once (NFR-P3).
+\end{itemize}
+\textbf{Deliverables.} Updated platform release, evaluation addendum and FYP-1 final report.
+\textbf{Evidence.} Test results, benchmark re-run and model cards with stored metrics.
+
+\section{Work Breakdown and Responsibilities}
+\begin{table}[htbp]
+\centering\small
+\caption{Work breakdown and ownership}
+\label{tab:wbs}
+\begin{tabularx}{\textwidth}{L{3.4cm} Y L{3.5cm}}
+\toprule
+\textbf{Work package} & \textbf{Tasks} & \textbf{Owner}\\
+\midrule
+WP1 Architecture and platform & Architecture design; performance analysis of the prototype; tile serving; storage and database design; processing pipeline; model registry; web portal; deployment configuration; benchmark. & Huzaifa Bin Khalid\\
+WP2 Crop-type model evaluation & Monthly composite preparation; spatial block protocol; model comparison and cost measurement; improvement ladder; error analysis. & Saneed Ullah, Taha Bashir Awan\\
+WP3 Comparison with literature & Reading and checking reference papers; like-for-like comparison and limits. & Saneed Ullah, Taha Bashir Awan\\
+WP4 Integration (Iteration 2) & Packaging the selected model as a registry plug-in; end-to-end measurement. & Shared\\
+WP5 Documentation and evaluation & Reports, demonstrations, final evaluation. & Shared\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Progress Against Plan}
+\begin{table}[htbp]
+\centering\small
+\caption{Planned phases (proposal slides) against actual progress}
+\label{tab:progress}
+\begin{tabularx}{\textwidth}{L{3.3cm} L{4.5cm} Y}
+\toprule
+\textbf{Planned (slides)} & \textbf{Planned content} & \textbf{Actual at mid-term}\\
+\midrule
+Phase 1 (FYP-1) Research and data understanding & Literature review; CDL/AOI analysis; satellite data acquisition & Done. Literature extended with eight crop-type papers; monthly 2022 composites exported for AOI1 and AOI2.\\
+Phase 2 (FYP-1) Core crop mapping pipeline & Preprocessing; training dataset; baseline model; initial GIS boundary extraction & Done for two AOIs. Eleven models compared; improved pipeline selected. Field regions derived from crop-type output as interim boundaries.\\
+Phase 3 (FYP-2) Yield and platform integration & Yield module; Web GIS; system integration & Platform architecture and integration brought forward and done in FYP-1. Yield remains in FYP-2.\\
+Phase 4 (FYP-2) Evaluation and finalisation & Hold-out tests; failure analysis; performance evaluation; deployment & Partly brought forward: spatial hold-out testing, error analysis and performance benchmark already done; final evaluation and deployment remain.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Delays, Deviations and Recovery Plan}
+\begin{itemize}
+  \item \textbf{Platform work brought forward (deviation).} The slides placed Web GIS and integration in
+        FYP-2. Profiling showed the prototype would not scale, and the panel named performance,
+        light weight, usability and integration as the main concerns (P3--P6), so the architecture
+        was redesigned and implemented in Iteration 1. This reduces
+        integration risk in FYP-2.
+  \item \textbf{Technology change (deviation).} The Django and Leaflet prototype that sent GeoJSON was
+        replaced by FastAPI, React with MapLibre, TiTiler, PMTiles, PostGIS, Celery and MinIO
+        (Section~\ref{sec:evolution}).
+  \item \textbf{Model recommendation reversed (deviation).} Early research notes recommended the
+        Presto foundation model; the experiments did not support it for the U.S./CDL case, so a
+        LightGBM pipeline is proposed.
+  \item \textbf{Platform still runs the baseline crop-type model (delay).} The selected pipeline needs
+        monthly composites at ingest; integration is the first item of Iteration 2.
+  \item \textbf{Boundary model not started (delay).} Field regions derived from crop-type output act as
+        the interim boundary layer; a boundary model is planned for Iteration 3.
+  \item \textbf{Two of eight AOIs processed (delay).} Monthly composites exist for AOI1 and AOI2; the
+        remaining AOIs will be exported for the cross-area and generalisation tests.
+  \item \textbf{AI-assisted implementation (deviation from the stated GenAI boundary).} The proposal
+        limited generative AI to documentation; during Iteration 1 an AI coding assistant was also
+        used for parts of the platform implementation, under the team's design and review
+        (Section~\ref{sec:tools-assisted}).
+\end{itemize}
+\textbf{Recovery.} Iteration 2 starts with model integration, then the CDL confidence rule and the
+cross-area test; AOI exports run in the background on Google Earth Engine. The boundary and yield
+work in FYP-2 benefits from the registry and pipeline already in place, so new models only need a
+task and a manifest.

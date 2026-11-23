@@ -1,0 +1,32 @@
+key: cropland
+name: Cropland vs non-cropland (LSTM)
+task: cropland
+version: 2026.11.1
+status: ready
+enabled: true
+entrypoint: task:CroplandLSTMTask
+artifact: cropland_lstm/model.pt
+requires: [imagery]
+input_spec:
+  # 77 bands = 7 months (April..October) x 11 values, month by month
+  bands: [B02, B03, B04, B05, B06, B07, B08, B8A, B11, B12, NDVI]
+  months: [4, 5, 6, 7, 8, 9, 10]
+  accepts_band_counts: [77]
+  resolution_m: 30
+  crs: EPSG:5070
+  scaling: monthly median of cloud-masked Sentinel-2 L2A (SCL 4-7), reflectance x 10000, int16, nodata -32768
+  builder: tools/build_composite_stac.py
+resources: {queue: models}
+outputs:
+  - {kind: cropland, group: Cropland, format: cog, dtype: uint8, colormap: cropland_default}
+valid_regions: ["8 US study areas, April-October 2022 (CDL 2022 labels)"]
+notes: >-
+  Class-weighted UnrolledLSTM, 64 units (Gajardo 2023 / Kerner 2020), selected from 18 model variants.
+  Validated only on new US areas for April-October 2022; other countries, years or seasons are untested.
+  Labels single 30 m pixels; a pixel needs clean data in at least 6 of the 7 months.
+training:
+  data: USDA CDL 2022 + monthly Sentinel-2 composites, 8 US areas, 300,000 pixels
+  split: leave-one-area-out over 8 US areas (tested on the held-out area)
+  metrics_file: cropland_lstm.metrics.json
+  threshold: 0.5
+  model_card: model_card.json

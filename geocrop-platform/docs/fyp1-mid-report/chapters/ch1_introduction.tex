@@ -1,0 +1,213 @@
+\chapter{Introduction and Project Vision}
+
+\section{Project Overview}
+GeoCrop is a satellite-based agricultural intelligence toolkit. It takes multispectral satellite
+imagery of an agricultural region, identifies which land is cropland, classifies the crop growing
+in each 30~m pixel, groups pixels into field regions with area, and (in FYP-2) estimates yield. The
+results are published as map layers and statistics in a Web GIS portal, where users can switch
+layers on and off, filter by crop, search fields, inspect values at any location and read
+crop-area summaries.
+
+The system is built on open data. Sentinel-2~\cite{sentinel2} provides the imagery, the USDA Cropland Data Layer
+(CDL)~\cite{cdlsite,lin2022,hao2020} provides labelled crop maps for training and evaluation over eight U.S.
+areas of interest (AOIs), and USDA NASS statistics will provide historical yield. GeoCrop is designed
+as an academic, department-oriented prototype whose models, evaluation method and outputs are
+transparent, and whose software architecture can carry many images and many models without
+slowing down.
+
+\section{Problem Statement}
+The current crop-survey workflow relies on manual field inspection, crop identification, boundary
+digitisation, area calculation and GIS data entry. This process is time-consuming, needs significant
+human resources, is difficult to repeat frequently over large regions, and can introduce
+inconsistencies in crop classification and field mapping. Satellite imagery observes agricultural
+land frequently and with geographic reference, but turning those observations into crop maps,
+crop types, field regions, acreage and expected yield still requires substantial processing and
+expertise, and the results must be delivered in a form that planners can use interactively over
+large areas.
+
+There is therefore a need for an integrated system that learns crop classes from labelled
+geospatial data, analyses new satellite imagery, distinguishes cropland from other land, classifies
+supported crop types, derives field regions and area, predicts yield from suitable spatio-temporal
+features, and presents the results through a responsive Web GIS portal that remains fast as the
+number of images and model layers grows.
+
+\section{Problem Context and Motivation}
+Agricultural departments, field survey teams, GIS analysts and planners need timely information
+about what is planted, where, and over how much area. In the current workflow (physical survey,
+crop and non-crop identification, crop-type identification, boundary drawing, area and coordinate
+calculation, GIS entry, separate yield assessment) every step is manual. This is slow, needs many
+people, is hard to scale across large areas, and can introduce errors.
+
+Open Earth-observation missions now give repeat multispectral coverage, and machine learning has
+shown that crop classes can be learned from spectral and temporal patterns~\cite{khan2023,
+muqaddas2024,tran2022}. Research in Pakistan confirms that Sentinel-2 can identify crops in
+smallholder settings, but still depended on thousands of manually surveyed field boundaries
+\cite{khan2023}. In the United States, the CDL offers large labelled coverage that has been used to
+train classifiers~\cite{hao2020,wang2020}. GeoCrop uses this labelled coverage to develop and
+evaluate the methodology before adaptation to local data.
+
+The motivation is also practical. A crop map is only useful if people can work with it. The
+proposal-stage prototype showed that a single AOI's crop-type result, shipped as vector polygons,
+already made the map slow to load and zoom. A system meant for many images and several models
+(cropland, crop type, boundaries, yield) has to be designed for performance from the start. Better
+agricultural monitoring supports informed crop planning and food-security decisions (SDG~2,
+Zero Hunger).
+
+\section{Project Vision}
+GeoCrop aims to give agricultural organisations a single toolkit that turns new satellite imagery
+into trustworthy, map-ready crop intelligence in minutes: where the cropland is, what is growing,
+how large each crop area is, and what yield to expect. Results should be honest about their
+accuracy, reproducible, and fast to explore on a map, and new models should plug into the same
+platform as research progresses.
+
+\section{Project Objectives}\label{sec:goals}
+After the proposal defence the panel asked the team to clarify its goals (P1,
+Section~\ref{sec:feedback}). The goals are now stated as follows. GeoCrop's primary goal is a
+\emph{light, fast and integrated} platform: one that turns an uploaded Sentinel-2 image into crop
+layers on a map without heavy hardware, and that stays usable as images and models grow. Its
+research goal is crop-type models that are accurate under a fair test and cheap enough to serve.
+Three terms from the proposal are defined precisely:
+\begin{itemize}
+  \item \textbf{Crop mapping}: per-pixel cropland and crop-type maps at 30~m for supported AOIs,
+        scored against the CDL on spatially separated test blocks.
+  \item \textbf{GIS integration}: every result is a georeferenced layer in one catalogue, viewable,
+        filterable and comparable on the same map as the imagery and other layers.
+  \item \textbf{Real-time estimation}: \emph{near} real time on demand. An AOI-sized image is analysed
+        and published in about a minute (57~s measured), and a map screen loads in well under a
+        second. Continuous streaming of new imagery is not a goal.
+\end{itemize}
+Each objective below has a measurable target that is checked in Chapter~7.
+\begin{enumerate}[label=\textbf{O\arabic*.}, leftmargin=1.1cm]
+  \item Build a spatially aligned Sentinel-2 and CDL training dataset for at least two AOIs, with
+        a reproducible preparation pipeline.
+  \item Develop and evaluate cropland and crop-type models using a spatially separated test set,
+        reporting accuracy, macro-F1 and per-class scores with confidence intervals, and compare
+        them with published results.
+  \item Derive field regions and area from model output and publish them as GIS layers with
+        geographic coordinates; add a dedicated field-boundary model in FYP-2.
+  \item Develop a yield-estimation module evaluated with $R^2$, RMSE and MAE against USDA NASS
+        records at the spatial scale for which ground truth exists.
+  \item Deliver a Web GIS portal that shows one screen of results using under 1~MB of data, returns
+        cold map tiles in under 300~ms and cached tiles in under 50~ms, and keeps several layers
+        visible at once.
+  \item Provide a processing pipeline in which an uploaded image is validated, analysed by the
+        selected models and published to the map automatically, and in which a new model can be
+        added without changing the API, database schema or user interface.
+\end{enumerate}
+
+\section{Project Scope}
+\textbf{Included.}
+\begin{itemize}
+  \item Satellite data preparation: Sentinel-2 composites, band selection, reprojection to the
+        CDL grid, vegetation indices and monthly time series.
+  \item CDL-based label preparation for the supplied AOIs, including rare-class grouping.
+  \item Cropland/non-cropland and multi-class crop-type mapping with model comparison.
+  \item Field-region derivation, area statistics and vector map layers; a field-boundary model in
+        FYP-2.
+  \item Yield estimation using satellite features and USDA NASS history (FYP-2).
+  \item A Web GIS platform: upload and processing jobs, layer catalogue, tile-based map, dashboard,
+        model catalogue, system status, and user accounts.
+\end{itemize}
+\textbf{Excluded.} Building or operating satellites; legal or cadastral ownership mapping; crop
+disease diagnosis; real-time farm machinery integration; production-scale national deployment
+with service-level guarantees; and claims of ground-truth accuracy beyond agreement with the
+reference labels.
+
+\section{Project Modules}
+\begin{table}[htbp]
+\centering\small
+\caption{GeoCrop modules and responsibilities}
+\label{tab:modules}
+\begin{tabularx}{\textwidth}{L{4.2cm} Y L{2.2cm}}
+\toprule
+\textbf{Module} & \textbf{Responsibility} & \textbf{Status}\\
+\midrule
+M1 Data acquisition and preprocessing & Export Sentinel-2 composites, align them to the CDL grid (EPSG:5070, 30~m), build monthly time series and indices, convert results to Cloud Optimized GeoTIFF. & Working for AOI1, AOI2\\
+M2 Crop mapping & Cropland/non-cropland and crop-type models; evaluation and model selection. & Baseline in platform; research pipeline selected\\
+M3 Field regions, boundaries and area & Polygonise model output, compute area, build vector tiles; field-boundary model later. & Field regions working; model in FYP-2\\
+M4 Yield estimation & Regression on satellite features and NASS yield history. & FYP-2 (registered placeholder)\\
+M5 Processing pipeline & Upload, validation, preprocessing, background model runs, progress tracking. & Working\\
+M6 Model registry & Plug-in contract, manifests, dependency resolution, model catalogue. & Working\\
+M7 Catalogue, storage and statistics & PostGIS catalogue of areas, runs, layers, statistics and fields; S3 object storage. & Working\\
+M8 Web GIS portal & Home, Live Map, Dashboard, Analyze Imagery, Models, System Status, accounts. & Working\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Stakeholders and User Classes}
+\begin{table}[htbp]
+\centering\small
+\caption{Stakeholders and user classes}
+\label{tab:stakeholders}
+\begin{tabularx}{\textwidth}{L{4.2cm} Y}
+\toprule
+\textbf{Stakeholder / user class} & \textbf{Characteristics and needs}\\
+\midrule
+Agriculture Department & Needs regional crop area and expected production for planning; values accuracy and transparency.\\
+Field survey teams & Today collect crop and boundary data manually; benefit from fewer field visits and targeted checks.\\
+GIS analysts & Technical users; need georeferenced layers, coordinates, area and exportable data.\\
+Agricultural planners and decision makers & Non-technical; need clear maps, legends and summary statistics.\\
+Farmers & Indirect beneficiaries of better planning and advisory services.\\
+Industry / startup partner & External collaborator interested in a scalable, light system.\\
+Platform developers and ML engineers & Add and update models, monitor the system, run evaluations.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Success Criteria}
+\begin{itemize}
+  \item \textbf{Crop mapping:} crop-type accuracy and macro-F1 reported on spatially separated test
+        blocks with 95\% intervals; results comparable in order of magnitude to published CDL-based
+        studies for similar regions (for example 94\% South Dakota and 83\% California
+        in~\cite{tran2022}).
+  \item \textbf{Boundaries and area:} spatial overlap (IoU) and area error against reference data,
+        and acreage within a stated tolerance of USDA statistics (FYP-2).
+  \item \textbf{Yield:} $R^2$, RMSE and MAE on held-out years or counties (FYP-2).
+  \item \textbf{Performance:} first visible result under 1~s, under 1~MB per screen, cold tiles
+        under 300~ms, cached tiles under 50~ms, eight or more layers visible.
+  \item \textbf{Pipeline:} an uploaded image reaches the map without manual steps, with readable
+        errors for invalid input; a new model is added by folder and manifest only.
+  \item \textbf{Lightweight:} the full workflow runs on one laptop-class host; the selected crop-type
+        model is CPU-only and small; peak memory per stage is measured.
+  \item \textbf{Usability:} non-technical users can find, filter and read results using legends and
+        plain-language labels; measured with task completion and a questionnaire score in a user
+        study.
+  \item \textbf{Integration:} several layers from different models and images can be used together on
+        one map without loading whole datasets.
+\end{itemize}
+
+\section{Constraints and Assumptions}
+\begin{itemize}
+  \item CDL labels are a classified product, not field survey data; scores measure agreement with
+        the CDL~\cite{lin2022}.
+  \item Sentinel-2 at 10--20~m, resampled to the 30~m CDL grid, limits boundary precision for small
+        fields.
+  \item Data for 2022 is used so that imagery and labels refer to the same season.
+  \item Yield ground truth (USDA NASS) is available at county level, which bounds the spatial scale
+        of yield evaluation.
+  \item Compute is limited to student laptops and free cloud notebooks, and the panel named a
+        lightweight system as a main concern, so CPU-only inference is preferred and resource use
+        is measured for every stage (Section~\ref{sec:feasibility}).
+  \item Uploaded imagery is assumed to be a georeferenced Sentinel-2 surface-reflectance stack with
+        the documented bands; other formats are rejected with a clear message.
+  \item The platform runs on Docker Compose on a single host for development and demonstration.
+\end{itemize}
+
+\section{Ethical, Legal and DEI Considerations}
+\begin{itemize}
+  \item \textbf{Honest reporting:} predictions are never presented as ground truth. The portal
+        shows model accuracy, its evaluation protocol and limitations; placeholder models are
+        labelled ``coming soon'' and never produce data.
+  \item \textbf{Fairness across classes and regions:} per-class scores and per-area results are
+        reported so that unequal performance (for example on small or rare crops) is visible.
+  \item \textbf{Licensing:} Sentinel-2 data (Copernicus open licence), CDL and NASS data (U.S.
+        public domain), OpenStreetMap basemap (ODbL attribution shown) and open-source libraries
+        are used within their terms and acknowledged.
+  \item \textbf{Privacy:} uploaded imagery and results belong to the uploading account; passwords
+        are hashed; startup-provided data will be protected and not published.
+  \item \textbf{Accessibility and inclusion:} the interface uses clear legends, plain-language
+        labels, keyboard-accessible controls and readable colour palettes so that technical and
+        non-technical staff can use it.
+  \item \textbf{Disclosure:} external datasets, models, libraries and AI-assisted work are
+        disclosed (Sections~\ref{sec:tools-assisted} and~\ref{sec:external}).
+\end{itemize}

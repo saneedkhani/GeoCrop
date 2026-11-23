@@ -1,0 +1,23 @@
+key: croptype
+name: Crop type (Random Forest)
+task: croptype
+version: 2026.10.1
+status: ready
+enabled: true
+entrypoint: task:CropTypeTask
+artifact: croptype.joblib
+requires: [imagery, cropland]
+input_spec:
+  bands: [B2, B3, B4, B8, B11, B12, NDVI]
+  accepts_band_counts: [6, 7]
+  resolution_m: 30
+  crs: EPSG:5070
+  scaling: Sentinel-2 L2A reflectance x 10000
+resources: {queue: models}
+outputs:
+  - {kind: croptype, group: Crop type, format: cog, dtype: uint8, colormap: croptype_default}
+valid_regions: ["Columbia Basin, Washington, USA (AOI 1)"]
+training:
+  data: USDA CDL + Sentinel-2 composite, AOI 1; crops under 5,000 px grouped as Other crop
+  split: random 80/20 pixel split (optimistic, spatial leakage likely)
+  metrics_file: aoi1_croptype.metrics.json

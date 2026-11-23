@@ -1,0 +1,279 @@
+\chapter{System Design}
+
+\section{System Architecture}
+GeoCrop follows a layered, service-oriented architecture built around one principle: \emph{send
+only what is visible}. Model results are stored once as Cloud Optimized GeoTIFFs (COG) in object
+storage; the browser requests small map tiles for the current view, which a stateless tile service
+cuts from the COG and Nginx caches. Heavy work runs in background workers, and a spatial database
+holds the catalogue that tells the interface what exists. The main building blocks are the COG
+format~\cite{cog}, TiTiler~\cite{titiler}, PMTiles~\cite{pmtiles}, MapLibre GL~\cite{maplibre} and
+PostGIS~\cite{postgis}. Figure~\ref{fig:arch} shows the services
+and their connections.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[every node/.style={font=\small}]
+\node[box, minimum width=4.2cm, minimum height=0.7cm, fill=gray!8] (base) at (0,1.35) {Basemap tiles (OSM / MapTiler)};
+\node[box, minimum width=11.4cm, minimum height=0.95cm, fill=green!10] (client) at (0,0) {\textbf{Web GIS client}: React + MapLibre GL (react-map-gl)};
+\node[box, minimum width=11.4cm, minimum height=0.85cm, fill=yellow!10] (nginx) at (0,-1.6) {\textbf{Nginx}: serves the app, proxies /api, caches /tiles};
+\node[box, text width=3.1cm, minimum height=1.35cm] (api) at (-3.95,-3.55) {\textbf{FastAPI}\\auth, catalogue, statistics, uploads, jobs};
+\node[box, text width=3.1cm, minimum height=1.35cm] (tiles) at (0,-3.55) {\textbf{Tile service}\\TiTiler / rio-tiler\\COG $\rightarrow$ PNG tiles};
+\node[box, text width=3.1cm, minimum height=1.35cm] (worker) at (3.95,-3.55) {\textbf{Celery workers}\\ingest, preprocessing, model registry runs};
+\node[dbox, minimum width=2.8cm] (pg) at (-3.95,-7.0) {PostgreSQL + PostGIS\\catalogue, statistics};
+\node[dbox, minimum width=2.8cm] (s3) at (0,-7.0) {MinIO (S3)\\COG, PMTiles, uploads};
+\node[dbox, minimum width=2.8cm] (redis) at (3.95,-7.0) {Redis\\job broker};
+\node[lane, fit=(pg)(s3)(redis), inner sep=7pt, label={[font=\scriptsize\itshape, anchor=north west]north west:Data tier}] (data) {};
+\draw[arr] (client) -- (base);
+\draw[arr] (client) -- (nginx);
+\draw[arr] (nginx.south -| api.north) -- (api.north);
+\draw[arr] (nginx.south -| tiles.north) -- (tiles.north);
+\draw[darr] (tiles.west) -- node[lbl,above]{layer} (api.east);
+\draw[arr] (api.south) -- node[lbl,right]{SQL, enqueue} (api.south |- data.north);
+\draw[arr] (tiles.south) -- node[lbl,right]{COG range reads} (tiles.south |- data.north);
+\draw[arr] (worker.south) -- node[lbl,right]{jobs, results, statistics} (worker.south |- data.north);
+\end{tikzpicture}
+\caption{GeoCrop system architecture. The browser also reads PMTiles and uploads imagery directly to object storage using short-lived signed URLs; the tile service looks up layer styles from the API.}
+\label{fig:arch}
+\end{figure}
+
+\section{Architectural Components}
+\begin{table}[htbp]
+\centering\small
+\caption{Architectural components}
+\label{tab:components}
+\begin{tabularx}{\textwidth}{L{3.0cm} L{3.4cm} Y}
+\toprule
+\textbf{Component} & \textbf{Technology} & \textbf{Responsibility}\\
+\midrule
+Web GIS client & React, Vite, TypeScript, MapLibre GL via react-map-gl, TanStack Query, Zustand & Home, Live Map workspace, Dashboard, Analyze Imagery, Processing, Models, Status, accounts. Builds layers from the catalogue; loads tiles on demand.\\
+Edge & Nginx & Serves the built app; proxies the API; caches tiles with immutable headers; resolves services through Docker DNS at request time.\\
+API service & FastAPI, Pydantic, SQLAlchemy 2, GeoAlchemy2, PyJWT, bcrypt & REST API v1: health, auth, areas, models, layers, fields, point query, statistics, uploads, runs, jobs.\\
+Tile service & TiTiler / rio-tiler (FastAPI) & \code{/tiles/{layer}/{version}/{z}/{x}/{y}.png}; reads only needed COG blocks; applies the server-side style; optional crop filter.\\
+Workers & Celery & Ingest (validate, reproject, COG), model runs through the registry, statistics, layer publishing, progress.\\
+Model registry & Python package with YAML manifests & Discovers models, resolves dependencies, runs tasks with a common context; built-in cropland, crop type, NDVI index, boundary and yield placeholders.\\
+Spatial database & PostgreSQL 16 + PostGIS 3.4, Alembic & Catalogue of users, areas, uploads, images, models, runs, layers, statistics, field regions, jobs.\\
+Job broker & Redis 7 & Celery broker and result backend.\\
+Object storage & MinIO (S3 API) & Uploads, COG imagery and results, PMTiles; anonymous read only for vector tiles.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Interfaces and Dependencies}
+\begin{table}[htbp]
+\centering\small
+\caption[Main REST interfaces]{Main REST interfaces (prefix \code{/api/v1}; interactive documentation at \code{/api/docs})}
+\label{tab:api}
+\begin{tabularx}{\textwidth}{L{5.2cm} Y}
+\toprule
+\textbf{Endpoint} & \textbf{Purpose}\\
+\midrule
+\code{GET /health} & Status of database, broker, storage, tiles and model registry; configuration notes.\\
+\code{POST /auth/signup}, \code{/auth/login}, \code{GET /auth/me} & Accounts and tokens.\\
+\code{GET /aois} & Areas visible to the user, with bounds.\\
+\code{GET /models} & Registered models, status, inputs, outputs, accuracy and per-class scores.\\
+\code{GET /layers?aoi=&kind=&run=} & Layer catalogue: style, legend, bounds, zoom range, tile URL, version.\\
+\code{GET /fields?aoi=&q=} & Field regions with crop, area and bounding box.\\
+\code{GET /point?lng=&lat=&layers=} & Values and labels of several layers at one location.\\
+\code{GET /stats?layer=} & Pre-computed area and share per class.\\
+\code{POST /uploads}, \code{/uploads/{id}/complete} & Signed upload URL; start ingestion with models, location and date.\\
+\code{POST /runs}, \code{GET /runs}, \code{GET /jobs/{id}} & Re-run models; run history; job progress and steps.\\
+\code{GET /tiles/{layer}/{v}/{z}/{x}/{y}.png} & Raster tiles (tile service, cached by Nginx).\\
+\bottomrule
+\end{tabularx}
+\end{table}
+External dependencies are Sentinel-2 imagery exported with Google Earth Engine, USDA CDL rasters and
+AOI shapefiles, an OpenStreetMap or MapTiler basemap, and the open-source libraries listed in
+Section~\ref{sec:external}. Internally, the API depends on the database, broker and storage; the tile
+service depends on the API (layer lookup, cached for five minutes) and storage; workers depend on the
+broker, database, storage and model artifacts.
+
+\section{Architecture Decisions and Rationale}
+\begin{table}[htbp]
+\centering\small
+\caption{Key architecture decisions}
+\label{tab:adr}
+\begin{tabularx}{\textwidth}{L{3.6cm} Y L{3.6cm}}
+\toprule
+\textbf{Decision} & \textbf{Rationale} & \textbf{Alternative rejected}\\
+\midrule
+Raster as source of truth (COG) & Models predict pixels; a 30~m raster of AOI1 is about 1.6~MB, the same result as polygons 43.3~MB. & Vectorising all output to GeoJSON\\
+Tiles via TiTiler & Reads only the COG blocks needed per tile; styles applied on the server; no pre-rendering. & Pre-rendered tile folders; single PNG overlays\\
+PMTiles for vectors & One static file read by range requests; no tile server; cacheable. & GeoJSON; dynamic vector tile server\\
+MapLibre GL & WebGL rendering of raster and vector tiles; open source. & Leaflet (SVG/Canvas)\\
+Versioned, immutable tile URLs & Browsers and Nginx can cache for a year; a new run gets a new URL. & Cache invalidation logic\\
+FastAPI & Same stack as TiTiler; async I/O; typed schemas and generated docs. & Django templates (prototype)\\
+PostgreSQL + PostGIS & Spatial types and indexes, joins between catalogue and statistics, JSONB for styles and metrics. & SQLite (prototype)\\
+Celery + Redis & Long jobs off the request path; retries; progress. & Synchronous processing\\
+S3-compatible storage (MinIO) & Large files, range reads, signed uploads, cloud-portable. & Local disk\\
+Manifest-based model registry & Models change over the project; new models without changes elsewhere. & Hard-coded model calls\\
+Docker Compose & One-command, reproducible stack for the team and the panel. & Manual installation\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Design Evolution}\label{sec:evolution}
+The proposal-stage prototype was a Django application with Leaflet. It returned the crop-type result
+for AOI1 as one GeoJSON response; the browser parsed it and drew 101,435 polygons as SVG. Uploads
+were recorded but never processed, field data on the dashboard was hand-written, and the session
+cookie held upload history. Table~\ref{tab:evolution} summarises the changes and why they were made.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Design evolution since the proposal}
+\label{tab:evolution}
+\begin{tabularx}{\textwidth}{L{2.6cm} L{3.6cm} L{4.0cm} Y}
+\toprule
+\textbf{Aspect} & \textbf{Proposal prototype} & \textbf{Current design} & \textbf{Reason}\\
+\midrule
+Result format & GeoJSON polygons (43.3~MB) & COG rasters + PMTiles & Data volume and rendering cost\\
+Map client & Leaflet, SVG & MapLibre GL, WebGL tiles & Smooth zoom with many layers\\
+Backend & Django views and templates & FastAPI + React SPA & Async API, typed contracts, separation of concerns\\
+Database & SQLite & PostgreSQL + PostGIS & Spatial queries, concurrency, catalogue\\
+Processing & None (upload recorded only) & Celery jobs with progress & Real analysis of new imagery\\
+Models & Offline scripts writing GeoJSON & Registry plug-ins writing rasters & Add models without code changes\\
+Dashboard data & Hard-coded sample fields & Pre-computed statistics in PostGIS & Real results\\
+Deployment & Single process & Seven containers via Compose & Reproducible, scalable services\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Domain Model}
+Figure~\ref{fig:domain} shows the main domain classes. An \emph{Area of Interest} owns source images
+and model runs; a run executes one registered \emph{Model} and produces one or more \emph{Layers};
+categorical layers are summarised by \emph{Zonal statistics}; crop-type runs also produce
+\emph{Field regions}. A \emph{Job} tracks the steps of an upload or a run.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  cls/.style={draw=black!70, rectangle split, rectangle split parts=2, fill=green!4, font=\scriptsize, align=left, text width=3.0cm, inner sep=3pt, rectangle split part fill={green!14,green!3}},
+  rel/.style={thick, black!60}, m/.style={font=\scriptsize, inner sep=1pt}]
+\node[cls] (user) at (0,0) {\textbf{User}\nodepart{second}email, username\\password\_hash, role};
+\node[cls] (aoi) at (4.4,0) {\textbf{AreaOfInterest}\nodepart{second}name, geom (Polygon)\\is\_public};
+\node[cls] (upload) at (0,-2.6) {\textbf{Upload}\nodepart{second}filename, size\\storage\_key, status};
+\node[cls] (img) at (4.4,-2.6) {\textbf{SourceImage}\nodepart{second}kind, captured\_on\\bands, resolution, bounds};
+\node[cls] (model) at (8.8,0) {\textbf{Model}\nodepart{second}key, task, version\\status, manifest};
+\node[cls] (run) at (8.8,-2.6) {\textbf{ModelRun}\nodepart{second}status, params\\metrics, timings};
+\node[cls] (layer) at (8.8,-5.3) {\textbf{Layer}\nodepart{second}kind, format, storage\_key\\style, legend, version};
+\node[cls] (stat) at (4.4,-5.3) {\textbf{ZonalStat}\nodepart{second}class, pixel\_count\\area\_ha, mean};
+\node[cls] (field) at (13.0,-2.6) {\textbf{FieldRegion}\nodepart{second}geom (Polygon)\\crop, area\_ha};
+\node[cls] (job) at (0,-5.3) {\textbf{Job}\nodepart{second}kind, status, progress\\steps, error};
+\draw[rel] (user) -- node[m,above]{owns} node[m,pos=0.15,below]{1} node[m,pos=0.85,below]{*} (aoi);
+\draw[rel] (user) -- node[m,left]{submits} node[m,pos=0.15,right]{1} node[m,pos=0.85,right]{*} (upload);
+\draw[rel] (upload) -- node[m,above]{becomes} node[m,pos=0.15,below]{1} node[m,pos=0.85,below]{0..1} (img);
+\draw[rel] (aoi) -- node[m,right]{has} node[m,pos=0.15,left]{1} node[m,pos=0.85,left]{*} (img);
+\draw[rel] (model) -- node[m,right]{runs as} node[m,pos=0.15,left]{1} node[m,pos=0.85,left]{*} (run);
+\draw[rel] (img) -- node[m,above]{input of} node[m,pos=0.15,below]{1} node[m,pos=0.85,below]{*} (run);
+\draw[rel] (run) -- node[m,right]{produces} node[m,pos=0.15,left]{1} node[m,pos=0.85,left]{1..*} (layer);
+\draw[rel] (layer) -- node[m,above]{summarised by} node[m,pos=0.15,below]{1} node[m,pos=0.85,below]{*} (stat);
+\draw[rel] (run) -- node[m,above]{derives} node[m,pos=0.15,below]{1} node[m,pos=0.85,below]{*} (field);
+\draw[rel] (upload) -- node[m,left]{tracked by} node[m,pos=0.15,right]{1} node[m,pos=0.85,right]{*} (job);
+\end{tikzpicture}}
+\caption{Domain model}
+\label{fig:domain}
+\end{figure}
+
+\section{Data Design}
+\textbf{Relational schema.} The catalogue is a PostgreSQL/PostGIS schema managed with Alembic
+(Table~\ref{tab:schema}). Geometries are stored in EPSG:4326 with GiST spatial indexes. Free-form
+fields (layer kind, style, legend, model manifest, run metrics) are strings or JSONB, so a new model
+output never needs a schema change. Rasters are never stored in the database.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Database tables}
+\label{tab:schema}
+\begin{tabularx}{\textwidth}{L{2.4cm} Y}
+\toprule
+\textbf{Table} & \textbf{Key columns}\\
+\midrule
+\code{users} & id, email (unique), username (unique), password\_hash, role, created\_at\\
+\code{aoi} & id, owner\_id, name, geom (Polygon, GiST), is\_public\\
+\code{upload} & id, user\_id, aoi\_id, filename, size\_bytes, storage\_key, status\\
+\code{source_image} & id, aoi\_id, upload\_id, kind, captured\_on, storage\_key, bounds (GiST), band\_count, resolution\_m\\
+\code{model} & id, key (unique), task, version, name, status, manifest (JSONB), enabled\\
+\code{model_run} & id, aoi\_id, model\_id, source\_image\_id, status, params, metrics (JSONB), error, timings\\
+\code{map_layer} & id, run\_id, aoi\_id, kind, group, name, format, storage\_key, bounds (GiST), zoom range, nodata, style, legend (JSONB), version, is\_public\\
+\code{zonal_stat} & layer\_id, zone\_type, zone\_id, class\_code, class\_name, pixel\_count, area\_ha, mean, min, max\\
+\code{field} & id, aoi\_id, run\_id, geom (Polygon, GiST), attributes (JSONB)\\
+\code{job} & id, kind, status, progress, message, error, steps (JSONB), upload\_id, user\_id\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Object storage layout} (bucket \code{geocrop}): \code{raw/{upload}/original.tif} for
+uploads; \code{runs/reference/...cog.tif} for imagery and reference layers;
+\code{runs/{run}/{kind}-{id}.cog.tif} for model outputs; and \code{vector/{aoi}/{run}/...pmtiles}
+for vector layers. Files are written once; a new run creates new keys.
+
+\textbf{Raster conventions.} COGs use 512-pixel internal blocks, DEFLATE compression and overviews
+(nearest neighbour for class maps, average for imagery). Categorical rasters use 0 as no-data; the
+cropland map uses 1 = cropland and 2 = non-cropland; crop-type codes map to class names stored in the
+layer legend.
+
+\section{Process / Behavior Design}
+\textbf{Upload to map.} Figure~\ref{fig:seq} shows the interaction from upload to published layers.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\scriptsize]
+\foreach \x/\n/\t in {0/b/Browser, 2.9/a/FastAPI, 5.8/s/MinIO, 8.7/w/Worker, 11.6/d/PostGIS}{
+  \node[box, minimum width=2.1cm] (\n) at (\x,0) {\textbf{\t}};
+  \draw[dashed, black!40] (\x,-0.35) -- (\x,-10.1);
+}
+\newcommand{\msg}[5]{\draw[#5] (#1,#3) -- node[lbl,above]{#4} (#2,#3);}
+\msg{0}{2.9}{-0.9}{1. POST /uploads}{arr}
+\msg{2.9}{11.6}{-1.4}{2. insert upload}{arr}
+\msg{2.9}{0}{-1.9}{3. signed PUT URL}{darr}
+\msg{0}{5.8}{-2.5}{4. PUT image (direct)}{arr}
+\msg{0}{2.9}{-3.1}{5. POST /complete (models)}{arr}
+\msg{2.9}{11.6}{-3.6}{6. insert job + steps}{arr}
+\msg{2.9}{8.7}{-4.1}{7. enqueue ingest}{arr}
+\msg{8.7}{5.8}{-4.7}{8. read original}{arr}
+\draw[arr] (8.7,-5.2) -- ++(0.7,0) -- node[lbl,right]{9. validate, reproject, COG} ++(0,-0.45) -- ++(-0.7,0);
+\msg{8.7}{5.8}{-6.1}{10. write image COG}{arr}
+\msg{8.7}{11.6}{-6.6}{11. AOI, image, layer}{arr}
+\draw[arr] (8.7,-7.1) -- ++(0.7,0) -- node[lbl,right]{12. run models in order} ++(0,-0.45) -- ++(-0.7,0);
+\msg{8.7}{5.8}{-8.0}{13. result COGs}{arr}
+\msg{8.7}{11.6}{-8.5}{14. run, layers, statistics}{arr}
+\msg{0}{2.9}{-9.1}{15. GET /jobs/{id} (polling)}{arr}
+\msg{2.9}{0}{-9.6}{16. done, steps}{darr}
+\end{tikzpicture}
+\caption{Sequence of an upload and analysis}
+\label{fig:seq}
+\end{figure}
+
+\textbf{Job and run states.} A job moves from \emph{queued} to \emph{running} and ends in \emph{done}
+or \emph{failed}; each step inside it is \emph{pending}, \emph{running}, \emph{done}, \emph{skipped}
+(placeholder model) or \emph{failed} (Figure~\ref{fig:states}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[st/.style={draw=black!70, rounded corners=8pt, fill=green!5, minimum width=2.1cm, minimum height=0.75cm, font=\small}]
+\node[circle, fill=black, inner sep=2.5pt] (start) at (0,0) {};
+\node[st] (q) at (2,0) {queued};
+\node[st] (r) at (6,0) {running};
+\node[st] (d) at (12,1.1) {done};
+\node[st, fill=red!6] (f) at (12,-1.1) {failed};
+\draw[arr] (start) -- (q);
+\draw[arr] (q) -- node[lbl,above]{worker picks job} (r);
+\draw[arr] (r.east) -- ++(0.6,0) |- node[lbl,pos=0.75,above]{all steps done} (d.west);
+\draw[arr] (r.east) -- ++(0.6,0) |- node[lbl,pos=0.75,below]{invalid input or error} (f.west);
+\draw[arr] (r.south) .. controls +(-0.6,-1.0) and +(0.6,-1.0) .. node[lbl,below]{progress per step} (r.south);
+\end{tikzpicture}
+\caption{Job state machine}
+\label{fig:states}
+\end{figure}
+
+\textbf{Model execution.} The registry plans the requested models with a topological sort over the
+layer kinds they require and produce (for example, crop type requires cropland). Each model receives
+a run context (image path, upstream outputs, scratch folder, artifacts, progress callback); its
+output files are converted to COG, uploaded, registered as layers with style and legend, and
+summarised as zonal statistics before the next model starts, so the map fills in progressively.
+
+\textbf{Tile request.} The client requests \code{/tiles/{layer}/{version}/{z}/{x}/{y}.png}. Nginx
+returns a cached copy when it has one; otherwise the tile service looks up the layer (cached),
+reads the needed COG window from storage with nearest-neighbour resampling for class maps, applies
+the stored colour map and returns a PNG with a one-year immutable cache header. Tiles outside the
+raster return HTTP~204.
